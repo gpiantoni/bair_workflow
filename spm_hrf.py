@@ -1,6 +1,3 @@
-
-from builtins import range
-
 import nipype.interfaces.io as nio  # Data i/o
 import nipype.interfaces.spm as spm  # spm
 import nipype.interfaces.fsl as fsl  # fsl
