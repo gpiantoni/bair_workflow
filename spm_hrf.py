@@ -1,19 +1,12 @@
-import nipype.interfaces.io as nio  # Data i/o
 import nipype.interfaces.spm as spm  # spm
 import nipype.interfaces.fsl as fsl  # fsl
 import nipype.interfaces.matlab as mlab  # how to run matlab
 import nipype.interfaces.utility as util  # utility
 import nipype.pipeline.engine as pe  # pypeline engine
 import nipype.algorithms.modelgen as model  # model specification
-import os  # system functions
-from csv import reader
-from pathlib import Path
 
 
 mlab.MatlabCommand.set_default_matlab_cmd("matlab -nodesktop -nosplash")
-
-
-import nipype.interfaces.spm as spm
 
 
 input_node = pe.Node(util.IdentityInterface(fields=[
