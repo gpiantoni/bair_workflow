@@ -1,3 +1,5 @@
+from nipype.pipeline.engine import Workflow
+
 from ..nodes.utils import input_node
 from ..nodes.fsl import skull
 from ..nodes.spm import (
@@ -9,7 +11,7 @@ from ..nodes.spm import (
 
 
 def create_preproc():
-    preproc = pe.Workflow(name='preproc')
+    preproc = Workflow(name='preproc')
     preproc.connect(input_node, 'anat', skull, 'in_file')
     preproc.connect(input_node, 'func', realign, 'in_files')
     preproc.connect(realign, 'mean_image', coreg, 'source')
