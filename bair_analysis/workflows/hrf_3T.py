@@ -25,8 +25,8 @@ def create_workflow_hrf_3T():
     preproc = Workflow(name='preproc')
     preproc.connect(input_node, 't1w', skull, 'in_file')
     preproc.connect(input_node, 'bold', realign, 'in_files')
-    preproc.connect(realign, 'mean_image', coreg, 'source')
-    preproc.connect(input_node, 't1w', coreg, 'target')
+    preproc.connect(input_node, 't1w', coreg, 'source')
+    preproc.connect(realign, 'mean_image', coreg, 'target')
     preproc.connect(realign, 'realigned_files', coreg, 'apply_to_files')
 
     preproc.connect(coreg, 'coregistered_files', design, 'functional_runs')
