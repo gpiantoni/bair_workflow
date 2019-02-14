@@ -1,4 +1,3 @@
-from pathlib import Path
 from nipype.pipeline.engine import Node
 from nipype.algorithms.modelgen import SpecifySPMModel
 from nipype.interfaces.spm import (
@@ -26,4 +25,4 @@ design.inputs.time_repetition = .85
 level1design = Node(interface=Level1Design(), name='general_linear_model')
 level1design.inputs.timing_units = 'secs'
 level1design.inputs.interscan_interval = .85
-level1design.inputs.bases = {'hrf':{'derivs': [0,0]}}
+level1design.inputs.bases = {'hrf': {'derivs': [0, 0]}}
