@@ -7,12 +7,14 @@ from ..nodes.spm import (
     coreg,
     design,
     level1design,
+    level1estimate,
+    contrastestimate,
     )
 
 from nipype.pipeline.engine import Node
 
 
-def create_preproc():
+def create_workflow_hrf_3T():
 
     input_node = Node(IdentityInterface(fields=[
         'bold',
@@ -26,8 +28,13 @@ def create_preproc():
     preproc.connect(realign, 'mean_image', coreg, 'source')
     preproc.connect(input_node, 't1w', coreg, 'target')
     preproc.connect(realign, 'realigned_files', coreg, 'apply_to_files')
-    preproc.connect(realign, 'realigned_files', design, 'functional_runs')
+
+    preproc.connect(coreg, 'coregistered_files', design, 'functional_runs')
     preproc.connect(input_node, 'events', design, 'bids_event_file')
     preproc.connect(design, 'session_info', level1design, 'session_info')
+    preproc.connect(level1design, 'spm_mat_file', level1estimate, 'spm_mat_file')
+    preproc.connect(level1estimate, 'spm_mat_file', contrastestimate, 'spm_mat_file')
+    preproc.connect(level1estimate, 'beta_images', contrastestimate, 'beta_images')
+    preproc.connect(level1estimate, 'residual_image', contrastestimate, 'residual_image')
 
     return preproc
