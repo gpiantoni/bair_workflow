@@ -1,6 +1,9 @@
 from nipype import Node, Workflow
 from nipype.interfaces.utility import IdentityInterface
 
+from ..nodes.fsl import skull, coreg_epi2fov, coreg_fov2whole, coreg_whole2t1w
+from ..nodes.spm import realign
+
 
 def create_workflow_realign_fov_t2star():
 
@@ -12,17 +15,20 @@ def create_workflow_realign_fov_t2star():
         ]), name='input')
     # output = Node(IdentityInterface(fields=['7T_T1w_reg_affine', '7T_T1w_reg_SyN']), name='output')
 
-    w = Workflow('realign_7T_to_epi')
+    w = Workflow('coreg_epi_2_t1w')
 
-    # it's necessary to convert to AFNI for nipype, otherwise afni/preprocess.py _list_outputs() throws an error
-    w.connect(input_node, 'bold', align_T2star_epi, 'in_file')
-    w.connect(input_node, 't2star_fov', align_T2star_epi, 'reference')
+    w.connect(input_node, 'epi', realign, 'in_files')
 
-    w.connect(input_node, 't2star_whole', align_T2star, 'in_file')
-    w.connect(input_node, 't2star_fov', align_T2star, 'reference')
+    w.connect(realign, 'mean_image', coreg_epi2fov, 'in_file')
+    w.connect(input_node, 'T2star_fov', coreg_epi2fov, 'reference')
 
-    w.connect(input_node, 't2star_whole', copy, 'in_file')
-    w.connect(copy, 'out_file', align_T1_T2star, 'in_file')
-    w.connect(input_node, 't1w', align_T1_T2star, 'anat')
+    w.connect(input_node, 'T2star_fov', coreg_fov2whole, 'in_file')
+    w.connect(input_node, 'T2star_whole', coreg_fov2whole, 'reference')
+
+    w.connect(input_node, 'T1w', skull, 'in_file')
+
+    w.connect(input_node, 'T2star_whole', coreg_whole2t1w, 'epi')
+    w.connect(skull, 'out_file', coreg_whole2t1w, 't1_brain')
+    w.connect(input_node, 'T1w', coreg_whole2t1w, 't1_head')
 
     return w
