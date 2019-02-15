@@ -14,3 +14,5 @@ def create_workflow_preproc_spm():
 
     w = Workflow(name='preproc_spm')
     w.connect(input_node, 'bold', realign, 'in_files')
+
+    return w

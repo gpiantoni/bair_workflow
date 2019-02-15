@@ -38,7 +38,7 @@ def create_workflow_coreg_epi2t1w():
 
     w = Workflow('coreg_epi2t1w')
 
-    w.connect(input_node, 'bold_image', coreg_epi2fov, 'in_file')
+    w.connect(input_node, 'bold_mean', coreg_epi2fov, 'in_file')
     w.connect(input_node, 'T2star_fov', coreg_epi2fov, 'reference')
 
     w.connect(input_node, 'T2star_fov', coreg_fov2whole, 'in_file')
