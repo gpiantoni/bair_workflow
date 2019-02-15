@@ -3,7 +3,6 @@ from nipype.interfaces.utility import IdentityInterface
 
 from ..nodes.spm import (
     realign,
-    coreg,
     design,
     level1design,
     level1estimate,
@@ -13,22 +12,17 @@ from ..nodes.spm import (
 from nipype.pipeline.engine import Node
 
 
-def create_workflow_hrf_3T():
+def create_workflow_hrf_7T():
 
     input_node = Node(IdentityInterface(fields=[
         'bold',
-        't1w',
         'events',
         ]), name='input')
 
-    preproc = Workflow(name='preproc')
+    preproc = Workflow(name='hrf_7T')
     preproc.connect(input_node, 'bold', realign, 'in_files')
 
-    preproc.connect(input_node, 't1w', coreg, 'source')
-    preproc.connect(realign, 'mean_image', coreg, 'target')
-    preproc.connect(realign, 'realigned_files', coreg, 'apply_to_files')
-
-    preproc.connect(coreg, 'coregistered_files', design, 'functional_runs')
+    preproc.connect(realign, 'realigned_files', design, 'functional_runs')
     preproc.connect(input_node, 'events', design, 'bids_event_file')
     preproc.connect(design, 'session_info', level1design, 'session_info')
     preproc.connect(level1design, 'spm_mat_file', level1estimate, 'spm_mat_file')
