@@ -1,5 +1,5 @@
 from pathlib import Path
-from os import rmtree
+from shutil import rmtree
 from nipype import config, logging
 
 PKG_DIR = Path(__file__).resolve().parent
