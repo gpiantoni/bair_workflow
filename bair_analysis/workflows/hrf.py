@@ -15,6 +15,10 @@ def create_workflow_hrfpattern():
         'events',
         ]), name='input')
 
+    output_node = Node(IdentityInterface(fields=[
+        'spmT_image',
+        ]), name='output')
+
     # node design matrix
     design = Node(interface=SpecifySPMModel(), name='design_matrix')
     design.inputs.input_units = 'secs'
@@ -44,5 +48,6 @@ def create_workflow_hrfpattern():
     w.connect(level1estimate, 'spm_mat_file', contrastestimate, 'spm_mat_file')
     w.connect(level1estimate, 'beta_images', contrastestimate, 'beta_images')
     w.connect(level1estimate, 'residual_image', contrastestimate, 'residual_image')
+    w.connect(contrastestimate, 'spmT_images', output_node, 'spmT_image')
 
     return w

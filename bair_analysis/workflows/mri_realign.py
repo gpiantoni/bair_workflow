@@ -32,9 +32,9 @@ def create_workflow_coreg_epi2t1w():
     coreg_whole2t1w = Node(EpiReg(), name='whole_2_t1w')
 
     concat_fov2t1w = Node(interface=ConvertXFM(), name='mat_fov2t1w')
-    concat_fov2t1w.concat_xfm = True
+    concat_fov2t1w.inputs.concat_xfm = True
     concat_epi2t1w = Node(interface=ConvertXFM(), name='mat_epi2t1w')
-    concat_epi2t1w.concat_xfm = True
+    concat_epi2t1w.inputs.concat_xfm = True
 
     w = Workflow('coreg_epi2t1w')
 
