@@ -3,6 +3,7 @@ from nipype.interfaces.utility import IdentityInterface
 from nipype.algorithms.modelgen import SpecifySPMModel
 from nipype.interfaces.spm import Level1Design as spm_design
 from nipype.interfaces.fsl import Level1Design as fsl_design
+from nipype.interfaces.fsl.maths import MathsCommand
 from nipype.interfaces.fsl import (
     FEATModel,
     FILMGLS,
@@ -61,6 +62,9 @@ def create_workflow_hrfpattern_spm():
 
 def create_workflow_hrfpattern_fsl():
 
+    replace_nan = Node(interface=MathsCommand(), name='replace_nan')
+    replace_nan.inputs.nan2zeros = True
+
     # GLM
     design = Node(interface=fsl_design(), name='design')
     design.inputs.interscan_interval = .85
@@ -78,13 +82,14 @@ def create_workflow_hrfpattern_fsl():
     estimate.inputs.threshold = 1000
 
     w = Workflow(name='hrfpattern_fsl')
-    w.connect(input_node, 'bold', model, 'functional_runs')
+    w.connect(input_node, 'bold', replace_nan, 'in_file')
+    w.connect(replace_nan, 'out_file', model, 'functional_runs')
     w.connect(input_node, 'events', model, 'bids_event_file')
     w.connect(model, 'session_info', design, 'session_info')
     w.connect(design, 'fsf_files', modelgen, 'fsf_file')
     w.connect(design, 'ev_files', modelgen, 'ev_files')
     w.connect(modelgen, 'design_file', estimate, 'design_file')
-    w.connect(input_node, 'bold', estimate, 'in_file')
+    w.connect(replace_nan, 'out_file', estimate, 'in_file')
     w.connect(modelgen, 'con_file', estimate, 'tcon_file')
     w.connect(estimate, 'zstats', output_node, 'T_image')
 

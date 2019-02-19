@@ -42,6 +42,7 @@ def create_workflow_hrfpattern_7T(glm='spm'):
     w.connect(input_node, 't1w', w_coreg, 'input.t1w')
     w.connect(input_node, 't1w', coreg_tstat, 'reference')
     w.connect(w_preproc, 'realign.realigned_files', w_hrfpattern, 'input.bold')
+    # w.connect(input_node, 'bold', w_hrfpattern, 'input.bold')
     w.connect(w_preproc, 'realign.mean_image', w_coreg, 'input.bold_mean')
 
     w.connect(w_hrfpattern, 'output.T_image', coreg_tstat, 'in_file')
