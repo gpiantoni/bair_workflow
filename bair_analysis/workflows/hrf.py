@@ -6,7 +6,6 @@ from nipype.interfaces.fsl import Level1Design as fsl_design
 from nipype.interfaces.fsl import (
     FEATModel,
     FILMGLS,
-    ContrastMgr,
     )
 from nipype.interfaces.spm import (
     EstimateModel,
@@ -57,7 +56,6 @@ def create_workflow_hrfpattern_spm():
     w.connect(estimate, 'beta_images', contrastestimate, 'beta_images')
     w.connect(estimate, 'residual_image', contrastestimate, 'residual_image')
     w.connect(contrastestimate, 'spmT_images', output_node, 'T_image')
-
     return w
 
 
@@ -68,6 +66,9 @@ def create_workflow_hrfpattern_fsl():
     design.inputs.interscan_interval = .85
     design.inputs.bases = {'gamma': {'derivs': False}}
     design.inputs.model_serial_correlations = True
+    design.inputs.contrasts = [
+        ('Visual', 'T', ['1', ], [1, ])
+        ]
 
     modelgen = Node(interface=FEATModel(), name='glm')
 

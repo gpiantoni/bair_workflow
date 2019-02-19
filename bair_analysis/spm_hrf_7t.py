@@ -50,7 +50,7 @@ def create_workflow_hrfpattern_7T(glm='spm'):
     return w
 
 
-w = create_workflow_hrfpattern_7T()
+w = create_workflow_hrfpattern_7T('fsl')
 
 input_node = w.get_node('input')
 input_node.inputs.t1w = str(
