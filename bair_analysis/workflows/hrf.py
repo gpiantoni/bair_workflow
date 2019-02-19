@@ -66,8 +66,8 @@ def create_workflow_hrfpattern_fsl():
     # GLM
     design = Node(interface=fsl_design(), name='design')
     design.inputs.interscan_interval = .85
-    design.inputs.timing_units = 'secs'
     design.inputs.bases = {'gamma': {'derivs': False}}
+    design.inputs.model_serial_correlations = True
 
     modelgen = Node(interface=FEATModel(), name='glm')
 
@@ -76,24 +76,15 @@ def create_workflow_hrfpattern_fsl():
     estimate.inputs.mask_size = 5
     estimate.inputs.threshold = 1000
 
-    contrastestimate = Node(interface=ContrastMgr(), name="contrast")
-    contrastestimate.inputs.contrasts = [
-        ('Visual', 'T', ['1', ], [1, ])
-        ]
-
     w = Workflow(name='hrfpattern_fsl')
     w.connect(input_node, 'bold', model, 'functional_runs')
     w.connect(input_node, 'events', model, 'bids_event_file')
     w.connect(model, 'session_info', design, 'session_info')
-    w.connect(design, 'fsf_file', modelgen, 'fsf_file')
+    w.connect(design, 'fsf_files', modelgen, 'fsf_file')
     w.connect(design, 'ev_files', modelgen, 'ev_files')
     w.connect(modelgen, 'design_file', estimate, 'design_file')
-    w.connect(modelgen, 'con_file', contrastestimate, 'tcon_file')
-
-    w.connect(estimate, 'param_estimates', contrastestimate, 'param_estimates')
-    w.connect(estimate, 'sigmasquareds', contrastestimate, 'sigmasquareds')
-    w.connect(estimate, 'corrections', contrastestimate, 'corrections')
-    w.connect(estimate, 'dof_file', contrastestimate, 'dof_file')
-    w.connect(contrastestimate, 'tstats', output_node, 'T_image')
+    w.connect(input_node, 'bold', estimate, 'in_file')
+    w.connect(modelgen, 'con_file', estimate, 'tcon_file')
+    w.connect(estimate, 'zstats', output_node, 'T_image')
 
     return w

@@ -3,15 +3,18 @@ from nipype.interfaces import matlab
 from nipype.interfaces.utility import IdentityInterface
 from nipype.interfaces.fsl import FLIRT
 
-from .workflows.hrf import create_workflow_hrfpattern_spm
 from .workflows.preproc import create_workflow_preproc_spm
+from .workflows.hrf import (
+    create_workflow_hrfpattern_spm,
+    create_workflow_hrfpattern_fsl,
+    )
 from .workflows.mri_realign import create_workflow_coreg_epi2t1w
 from .utils import ANALYSIS_DIR, SUBJECTS_DIR
 
 matlab.MatlabCommand.set_default_matlab_cmd("matlab -nodesktop -nosplash")
 
 
-def create_workflow_hrfpattern_7T():
+def create_workflow_hrfpattern_7T(glm='spm'):
     input_node = Node(IdentityInterface(fields=[
         'bold',
         'events',
@@ -26,7 +29,10 @@ def create_workflow_hrfpattern_7T():
     w = Workflow('hrf_7T')
 
     w_preproc = create_workflow_preproc_spm()
-    w_hrfpattern = create_workflow_hrfpattern_spm()
+    if glm == 'spm':
+        w_hrfpattern = create_workflow_hrfpattern_spm()
+    elif glm == 'fsl':
+        w_hrfpattern = create_workflow_hrfpattern_fsl()
     w_coreg = create_workflow_coreg_epi2t1w()
 
     w.connect(input_node, 'bold', w_preproc, 'input.bold')
