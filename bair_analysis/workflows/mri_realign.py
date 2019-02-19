@@ -39,16 +39,16 @@ def create_workflow_coreg_epi2t1w():
     w = Workflow('coreg_epi2t1w')
 
     w.connect(input_node, 'bold_mean', coreg_epi2fov, 'in_file')
-    w.connect(input_node, 'T2star_fov', coreg_epi2fov, 'reference')
+    w.connect(input_node, 't2star_fov', coreg_epi2fov, 'reference')
 
-    w.connect(input_node, 'T2star_fov', coreg_fov2whole, 'in_file')
-    w.connect(input_node, 'T2star_whole', coreg_fov2whole, 'reference')
+    w.connect(input_node, 't2star_fov', coreg_fov2whole, 'in_file')
+    w.connect(input_node, 't2star_whole', coreg_fov2whole, 'reference')
 
-    w.connect(input_node, 'T1w', skull, 'in_file')
+    w.connect(input_node, 't1w', skull, 'in_file')
 
-    w.connect(input_node, 'T2star_whole', coreg_whole2t1w, 'epi')
+    w.connect(input_node, 't2star_whole', coreg_whole2t1w, 'epi')
     w.connect(skull, 'out_file', coreg_whole2t1w, 't1_brain')
-    w.connect(input_node, 'T1w', coreg_whole2t1w, 't1_head')
+    w.connect(input_node, 't1w', coreg_whole2t1w, 't1_head')
 
     w.connect(coreg_fov2whole, 'out_matrix_file', concat_fov2t1w, 'in_file')
     w.connect(coreg_whole2t1w, 'epi2str_mat', concat_fov2t1w, 'in_file2')
