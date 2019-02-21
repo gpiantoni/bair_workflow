@@ -1,5 +1,5 @@
 from .utils import ANALYSIS_DIR, SUBJECTS_DIR
-from .workflows.hrfpattern_7T import create_workflow_hrfpattern_7T
+from .workflows.hrfpattern import create_workflow_hrfpattern_7T
 
 
 def workflow_hrfpattern_7T(glm='fsl'):
