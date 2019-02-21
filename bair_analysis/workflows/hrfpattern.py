@@ -5,7 +5,7 @@ from nipype.interfaces.fsl import FLIRT
 
 from .preproc.preproc import create_workflow_preproc_spm
 from .preproc.mri_realign import create_workflow_coreg_epi2t1w
-from .glm.hrf import (
+from .glm.hrfpattern import (
     create_workflow_hrfpattern_spm,
     create_workflow_hrfpattern_fsl,
     )
