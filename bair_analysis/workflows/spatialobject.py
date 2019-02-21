@@ -9,7 +9,7 @@ from .glm.spatialobject import (
     )
 
 
-def create_workflow_hrfpattern_7T():
+def create_workflow_spatialobject_7T():
     input_node = Node(IdentityInterface(fields=[
         'bold',
         'events',

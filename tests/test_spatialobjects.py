@@ -19,7 +19,7 @@ def test_workflow_spatialobject_7T():
         / 'sub-beilen/ses-UMCU7Tdaym13/T2star/sub-beilen_ses-UMCU7Tdaym13_acq-wholebrain_T2star.nii.gz')
     input_node.inputs.bold = str(
         SUBJECTS_DIR
-        / 'sub-beilen/ses-UMCU7Tdaym13/func/sub-beilen_ses-UMCU7Tdaym13_task-bairspatialobject_run-1_bold.nii.gz')
+        / 'sub-beilen/ses-UMCU7Tdaym13/func/sub-beilen_ses-UMCU7Tdaym13_task-bairspatialobject_run-1_bold.nii')
     input_node.inputs.events = str(
         SUBJECTS_DIR
         / 'sub-beilen/ses-UMCU7Tdaym13/func/sub-beilen_ses-UMCU7Tdaym13_task-bairspatialobject_run-1_events.tsv')
