@@ -3,12 +3,12 @@ from nipype.interfaces import matlab
 from nipype.interfaces.utility import IdentityInterface
 from nipype.interfaces.fsl import FLIRT
 
-from .workflows.preproc import create_workflow_preproc_spm
-from .workflows.hrf import (
+from .preproc import create_workflow_preproc_spm
+from .hrf import (
     create_workflow_hrfpattern_spm,
     create_workflow_hrfpattern_fsl,
     )
-from .workflows.mri_realign import create_workflow_coreg_epi2t1w
+from .mri_realign import create_workflow_coreg_epi2t1w
 
 matlab.MatlabCommand.set_default_matlab_cmd("matlab -nodesktop -nosplash")
 

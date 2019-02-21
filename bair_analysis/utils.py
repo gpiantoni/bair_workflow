@@ -11,7 +11,7 @@ LOG_DIR = ANALYSIS_DIR / 'log'
 
 try:
     rmtree(LOG_DIR)
-except FileNotFoundError:
+except OSError:
     pass
 LOG_DIR.mkdir(exist_ok=True)
 
