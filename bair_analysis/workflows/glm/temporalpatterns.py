@@ -24,9 +24,10 @@ model.inputs.input_units = 'secs'
 model.inputs.output_units = 'secs'
 model.inputs.high_pass_filter_cutoff = 128.
 model.inputs.time_repetition = .85
+model.inputs.bids_condition_column = 'trial_name'
 
 
-def create_workflow_spatialobject_fsl():
+def create_workflow_temporalpatterns_fsl():
 
     replace_nan = Node(interface=MathsCommand(), name='replace_nan')
     replace_nan.inputs.nan2zeros = True
@@ -37,9 +38,58 @@ def create_workflow_spatialobject_fsl():
     design.inputs.bases = {'gamma': {'derivs': False}}
     design.inputs.model_serial_correlations = True
     design.inputs.contrasts = [
-        ('Faces', 'T', ['FACES', 'HOUSES', 'LETTERS'], [1, -1, -1]),
-        ('Houses', 'T', ['FACES', 'HOUSES', 'LETTERS'], [-1, 1, -1]),
-        ('Letters', 'T', ['FACES', 'HOUSES', 'LETTERS'], [-1, 1, 1])
+        (
+            'OnePulse',
+            'T',
+            [
+                'ONEPULSE-1',
+                'ONEPULSE-2',
+                'ONEPULSE-3',
+                'ONEPULSE-4',
+                'ONEPULSE-5',
+                'ONEPULSE-6',
+            ],
+            [1, 1, 1, 1, 1, 1],
+        ),
+        (
+            'TwoPulses',
+            'T',
+            [
+                'TWOPULSE-1',
+                'TWOPULSE-2',
+                'TWOPULSE-3',
+                'TWOPULSE-4',
+                'TWOPULSE-5',
+                'TWOPULSE-6',
+            ],
+            [1, 1, 1, 1, 1, 1],
+        ),
+        (
+            'OnePulse_linear',
+            'T',
+            [
+                'ONEPULSE-1',
+                'ONEPULSE-2',
+                'ONEPULSE-3',
+                'ONEPULSE-4',
+                'ONEPULSE-5',
+                'ONEPULSE-6',
+            ],
+            [-3, -2, -1, 1, 2, 3],
+        ),
+        (
+            'TwoPulse_linear',
+            'T',
+            [
+                'TWOPULSE-1',
+                'TWOPULSE-2',
+                'TWOPULSE-3',
+                'TWOPULSE-4',
+                'TWOPULSE-5',
+                'TWOPULSE-6',
+            ],
+            [-3, -2, -1, 1, 2, 3],
+        ),
         ]
     modelgen = Node(interface=FEATModel(), name='glm')
 
@@ -48,7 +98,7 @@ def create_workflow_spatialobject_fsl():
     estimate.inputs.mask_size = 5
     estimate.inputs.threshold = 1000
 
-    w = Workflow(name='spatialobject_fsl')
+    w = Workflow(name='temporalpattern_fsl')
     w.connect(input_node, 'bold', replace_nan, 'in_file')
     w.connect(replace_nan, 'out_file', model, 'functional_runs')
     w.connect(input_node, 'events', model, 'bids_event_file')

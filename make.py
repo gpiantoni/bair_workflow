@@ -35,7 +35,7 @@ def _tests():
            '-v',
            '--cov=bair_analysis',
            '--cov-report=html',
-           'tests/test_spatialobjects.py',
+           'tests/test_temporalpatterns.py',
            ]
 
     output = run(CMD)

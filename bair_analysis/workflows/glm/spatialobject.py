@@ -38,9 +38,9 @@ def create_workflow_spatialobject_fsl():
     design.inputs.bases = {'gamma': {'derivs': False}}
     design.inputs.model_serial_correlations = True
     design.inputs.contrasts = [
-        ('Faces', 'T', ['FACES', 'HOUSES', 'LETTERS'], [1, -1, -1]),
-        ('Houses', 'T', ['FACES', 'HOUSES', 'LETTERS'], [-1, 1, -1]),
-        ('Letters', 'T', ['FACES', 'HOUSES', 'LETTERS'], [-1, 1, 1])
+        ('Faces', 'T', ['FACES', 'HOUSES', 'LETTERS'], [1, 0, 0]),
+        ('Houses', 'T', ['FACES', 'HOUSES', 'LETTERS'], [0, 1, 0]),
+        ('Letters', 'T', ['FACES', 'HOUSES', 'LETTERS'], [0, 0, 1])
         ]
     modelgen = Node(interface=FEATModel(), name='glm')
 

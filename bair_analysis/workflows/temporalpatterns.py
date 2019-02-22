@@ -1,15 +1,15 @@
-from nipype import Node, Workflow
+from nipype import MapNode, Node, Workflow
 from nipype.interfaces.utility import IdentityInterface
 from nipype.interfaces.fsl import FLIRT
 
 from .preproc.preproc import create_workflow_preproc_spm
 from .preproc.mri_realign import create_workflow_coreg_epi2t1w
-from .glm.spatialobject import (
-    create_workflow_spatialobject_fsl,
+from .glm.temporalpatterns import (
+    create_workflow_temporalpatterns_fsl,
     )
 
 
-def create_workflow_spatialobject_7T():
+def create_workflow_temporalpatterns_7T():
     input_node = Node(IdentityInterface(fields=[
         'bold',
         'events',
@@ -18,13 +18,15 @@ def create_workflow_spatialobject_7T():
         't1w',
         ]), name='input')
 
-    coreg_tstat = Node(interface=FLIRT(), name='realign_result_to_anat')
+    coreg_tstat = MapNode(
+        interface=FLIRT(), name='realign_result_to_anat',
+        iterfield=['in_file', ])
     coreg_tstat.inputs.apply_xfm = True
 
-    w = Workflow('spatialobject_7T')
+    w = Workflow('temporalpatterns_7T')
 
     w_preproc = create_workflow_preproc_spm()
-    w_spatialobject = create_workflow_spatialobject_fsl()
+    w_spatialobject = create_workflow_temporalpatterns_fsl()
     w_coreg = create_workflow_coreg_epi2t1w()
 
     w.connect(input_node, 'bold', w_preproc, 'input.bold')
