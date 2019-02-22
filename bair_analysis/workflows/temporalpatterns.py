@@ -1,4 +1,4 @@
-from nipype import MapNode, Node, Workflow
+from nipype import Node, Workflow
 from nipype.interfaces.utility import IdentityInterface
 from nipype.interfaces.fsl import FLIRT
 
@@ -18,9 +18,7 @@ def create_workflow_spatialobject_7T():
         't1w',
         ]), name='input')
 
-    coreg_tstat = MapNode(
-        interface=FLIRT(), name='realign_result_to_anat',
-        iterfield=['in_file', ])
+    coreg_tstat = Node(interface=FLIRT(), name='realign_result_to_anat')
     coreg_tstat.inputs.apply_xfm = True
 
     w = Workflow('spatialobject_7T')

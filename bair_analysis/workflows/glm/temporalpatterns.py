@@ -24,7 +24,6 @@ model.inputs.input_units = 'secs'
 model.inputs.output_units = 'secs'
 model.inputs.high_pass_filter_cutoff = 128.
 model.inputs.time_repetition = .85
-model.inputs.bids_condition_column = 'trial_name'
 
 
 def create_workflow_spatialobject_fsl():
