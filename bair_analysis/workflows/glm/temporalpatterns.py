@@ -1,4 +1,4 @@
-from nipype.pipeline.engine import Workflow, Node
+from nipype.pipeline.engine import Node, Workflow
 from nipype.interfaces.utility import IdentityInterface
 from nipype.algorithms.modelgen import SpecifySPMModel
 from nipype.interfaces.fsl import Level1Design as fsl_design

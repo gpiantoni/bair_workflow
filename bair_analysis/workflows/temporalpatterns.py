@@ -9,7 +9,26 @@ from .glm.temporalpatterns import (
     )
 
 
-def create_workflow_temporalpatterns_7T():
+    input_node.inputs.t1w = str(
+        SUBJECTS_DIR
+        / 'sub-beilen/ses-UMCU7Tdaym13/anat/sub-beilen_ses-UMCU7Tdaym13_acq-wholebrain_T1w.nii')
+    input_node.inputs.t2star_fov = str(
+        SUBJECTS_DIR
+        / 'sub-beilen/ses-UMCU7Tdaym13/T2star/sub-beilen_ses-UMCU7Tdaym13_acq-visualcortex_T2star.nii.gz')
+    input_node.inputs.t2star_whole = str(
+        SUBJECTS_DIR
+        / 'sub-beilen/ses-UMCU7Tdaym13/T2star/sub-beilen_ses-UMCU7Tdaym13_acq-wholebrain_T2star.nii.gz')
+    input_node.inputs.bold = str(
+        SUBJECTS_DIR
+        / 'sub-beilen/ses-UMCU7Tdaym13/func/sub-beilen_ses-UMCU7Tdaym13_task-bairtemporalpattern_run-1_bold.nii')
+    input_node.inputs.events = str(
+        SUBJECTS_DIR
+        / 'sub-beilen/ses-UMCU7Tdaym13/func/sub-beilen_ses-UMCU7Tdaym13_task-bairtemporalpattern_run-1_events.tsv')
+
+
+def create_workflow_temporalpatterns_7T(subjects, runs):
+
+
     input_node = Node(IdentityInterface(fields=[
         'bold',
         'events',
