@@ -57,6 +57,7 @@ def volreg_topup():
     n_mask.inputs.outputtype = 'NIFTI_GZ'
 
     w = Workflow(name='volreg_topup')
+
     w.connect(n_in, 'epi', n_volreg, 'in_file')
     w.connect(n_volreg, 'out_file', n_mean, 'in_file')
     w.connect(n_volreg, 'out_file', n_out, 'epi')
@@ -98,10 +99,13 @@ def mc_func():
     n_out = Node(IdentityInterface(fields=[
         'bold',
         'mean',
+        'motion_parameters',
         ]), name='output')
 
     n_mul = Node(interface=BinaryMaths(), name='mul')
     n_mul.inputs.operation = 'mul'
+
+    n_middle = take_middle()
 
     n_volreg = Node(interface=Volreg(), name='volreg')
     n_volreg.inputs.outputtype = 'NIFTI'
@@ -113,9 +117,12 @@ def mc_func():
     w = Workflow(name='mc_func')
     w.connect(n_in, 'bold', n_mul, 'in_file')
     w.connect(n_in, 'mask', n_mul, 'operand_file')
+    w.connect(n_in, 'bold', n_middle, 'in_file')
+    w.connect(n_middle, 'args', n_volreg, 'args')
     w.connect(n_mul, 'out_file', n_volreg, 'in_file')
     w.connect(n_volreg, 'out_file', n_out, 'bold')
     w.connect(n_volreg, 'out_file', n_mean, 'in_file')
+    w.connect(n_volreg, 'oned_matrix_save', n_out, 'motion_parameters')
     w.connect(n_mean, 'out_file', n_out, 'mean')
 
     return w
@@ -132,46 +139,60 @@ def allineate():
     return n
 
 
-"""
-n = Node(interface=Qwarp(), name='qwarp')
-# mean
-n.inputs.in_file = '/Fridge/users/giovanni/projects/margriet/analysis/preproc_wouter/sub-visual03/ses-UMCU7TGE/sub-visual03_ses-UMCU7TGE_task-bairspatialpatterns_run-02_bold/sub-visual03_ses-UMCU7TGE_acq-GE_dir-R_epi-r0.nii'
-# mean
-n.inputs.base_file = '/Fridge/users/giovanni/projects/margriet/analysis/preproc_wouter/sub-visual03/ses-UMCU7TGE/sub-visual03_ses-UMCU7TGE_task-bairspatialpatterns_run-02_bold/sub-visual03_ses-UMCU7TGE_task-bairspatialpatterns_run-02_bold-mc-mean.nii'
-n.inputs.outputtype = 'NIFTI'
-n.inputs.plusminus = True
-n.inputs.args = '-pmNAMES ap pa'
-
-"""
-
-"""
+def qwarp():
+    n = Node(interface=Qwarp(), name='qwarp')
+    n.inputs.outputtype = 'NIFTI'
+    n.inputs.plusminus = True
+    return n
 
 
-def merge_warp(warp0, warp1):
-    return ' '.join([warp0, warp1])
+def f_merge_warp(warp0, warp1):
+    return "'" + ' '.join([warp0, warp1]) + "'"
 
 
-f = Function(
-    input_names=[
-        'warp0',
-        'warp1'
+def merge():
+    merge_func = Function(
+        input_names=[
+            'warp0',
+            'warp1'
+            ],
+        output_names=[
+            'nwarp',
         ],
-    output_names=[
-        'nwarp',
-    ],
-    function=merge_warp,
-    )
+        function=f_merge_warp,
+        )
 
-"""
+    n = Node(interface=merge_func, name='merge_warp')
+    return n
 
-"""
-n = Node(interface=NwarpApply(), name='warpapply')
-n.base_dir = B_DIR
-# mean
-n.inputs.in_file = '/Fridge/users/giovanni/projects/margriet/analysis/preproc_wouter/sub-visual03/ses-UMCU7TGE/sub-visual03_ses-UMCU7TGE_task-bairspatialpatterns_run-02_bold/sub-visual03_ses-UMCU7TGE_acq-GE_dir-R_epi-r0.nii'
-# mean
-n.inputs.master = '/Fridge/users/giovanni/projects/margriet/analysis/preproc_wouter/sub-visual03/ses-UMCU7TGE/sub-visual03_ses-UMCU7TGE_task-bairspatialpatterns_run-02_bold/sub-visual03_ses-UMCU7TGE_task-bairspatialpatterns_run-02_bold-mc-mean.nii'
-# n.inputs.outputtype = 'NIFTI'
-n.inputs.warp  = ' a a'
-n.interface.cmdline
-"""
+
+def f_take_middle(in_file):
+    from nibabel import load
+
+    img = load(in_file)
+    n_dynamics = img.shape[3]
+    middle_dynamic = n_dynamics // 2
+
+    return f'-base {middle_dynamic}'
+
+
+def take_middle():
+    func = Function(
+        input_names=[
+            'in_file',
+            ],
+        output_names=[
+            'args',
+        ],
+        function=f_take_middle,
+        )
+
+    n = Node(interface=func, name='take_middle')
+    return n
+
+
+def warp_apply():
+    n = Node(interface=NwarpApply(), name='warpapply')
+    n.inputs.out_file = 'warped.nii'
+
+    return n
