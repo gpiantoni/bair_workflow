@@ -246,7 +246,49 @@ def make_workflow():
 
     w_mc_func = mc_mean('func')
     w_mc_fmap = mc_mean('fmap')
+    w_masking = make_w_masking()
     n_allineate = allineate()
+
+    n_qwarp = qwarp()
+    n_merge = merge()
+    n_apply = warp_apply()
+
+    w.connect(n_in, 'fmap', w_mc_fmap, 'input.epi')
+
+    w.connect(w_mc_fmap, 'output.mean', w_masking, 'input.fmap')
+    w.connect(n_in, 'func', w_masking, 'input.func')
+    w.connect(w_masking, 'output.func', w_mc_func, 'input.epi')
+
+    w.connect(w_masking, 'output.fmap', n_allineate, 'in_file')
+    w.connect(w_mc_func, 'output.mean', n_allineate, 'reference')
+
+    w.connect(n_allineate, 'out_file', n_qwarp, 'in_file')
+    w.connect(w_mc_func, 'output.mean', n_qwarp, 'base_file')
+
+    w.connect(n_qwarp, 'base_warp', n_merge, 'warp0')  # to check
+    w.connect(w_mc_func, 'output.motion_parameters', n_merge, 'warp1')  # to check
+
+    w.connect(n_merge, 'nwarp', n_apply, 'warp')
+    w.connect(w_masking, 'output.func', n_apply, 'in_file')
+    w.connect(w_mc_fmap, 'output.mean', n_apply, 'master')
+
+    # w.write_graph(graph2use='flat')
+    # w.write_graph(graph2use='colored')
+
+    return w
+
+
+def make_w_masking():
+
+    n_in = Node(IdentityInterface(fields=[
+        'func',
+        'fmap',  # mean
+        ]), name='input')
+
+    n_out = Node(IdentityInterface(fields=[
+        'func',
+        'fmap',  # mean
+        ]), name='output')
 
     n_mask = Node(interface=Automask(), name='mask_fmap')
     n_mask.inputs.clfrac = 0.4
@@ -269,37 +311,19 @@ def make_workflow():
     n_masking_fmap = Node(interface=BinaryMaths(), name='masking_fmap')
     n_masking_fmap.inputs.operation = 'mul'
 
-    n_qwarp = qwarp()
-    n_merge = merge()
-    n_apply = warp_apply()
-
-    w.connect(n_in, 'fmap', w_mc_fmap, 'input.epi')
+    w = Workflow('masking')
 
     w.connect(n_in, 'func', n_mask1, 'in_file')
-    w.connect(w_mc_fmap, 'output.mean', n_mask, 'in_file')
+    w.connect(n_in, 'fmap', n_mask, 'in_file')
     w.connect(n_mask, 'out_file', n_mul, 'in_file')
     w.connect(n_mask1, 'out_file', n_mul, 'operand_file')
     w.connect(n_in, 'func', n_masking, 'in_file')
     w.connect(n_mul, 'out_file', n_masking, 'operand_file')
-    w.connect(n_masking, 'out_file', w_mc_func, 'input.epi')
+    w.connect(n_masking, 'out_file', n_out, 'func')
 
-    w.connect(w_mc_fmap, 'output.mean', n_masking_fmap, 'in_file')
+    w.connect(n_in, 'fmap', n_masking_fmap, 'in_file')
     w.connect(n_mul, 'out_file', n_masking_fmap, 'operand_file')
 
-    w.connect(n_masking_fmap, 'out_file', n_allineate, 'in_file')
-    w.connect(w_mc_func, 'output.mean', n_allineate, 'reference')
-
-    w.connect(n_allineate, 'out_file', n_qwarp, 'in_file')
-    w.connect(w_mc_func, 'output.mean', n_qwarp, 'base_file')
-
-    w.connect(n_qwarp, 'base_warp', n_merge, 'warp0')  # to check
-    w.connect(w_mc_func, 'output.motion_parameters', n_merge, 'warp1')  # to check
-
-    w.connect(n_merge, 'nwarp', n_apply, 'warp')
-    w.connect(n_masking, 'out_file', n_apply, 'in_file')
-    w.connect(w_mc_fmap, 'output.mean', n_apply, 'master')
-
-    # w.write_graph(graph2use='flat')
-    # w.write_graph(graph2use='colored')
+    w.connect(n_masking_fmap, 'out_file', n_out, 'fmap')
 
     return w
