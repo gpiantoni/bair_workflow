@@ -247,10 +247,7 @@ def make_workflow():
     w_mc_func = mc_mean('func')
     w_mc_fmap = mc_mean('fmap')
     w_masking = make_w_masking()
-    n_allineate = allineate()
-
-    n_qwarp = qwarp()
-    n_merge = merge()
+    w_warp = make_w_warp()
     n_apply = warp_apply()
 
     w.connect(n_in, 'fmap', w_mc_fmap, 'input.epi')
@@ -259,21 +256,48 @@ def make_workflow():
     w.connect(n_in, 'func', w_masking, 'input.func')
     w.connect(w_masking, 'output.func', w_mc_func, 'input.epi')
 
-    w.connect(w_masking, 'output.fmap', n_allineate, 'in_file')
-    w.connect(w_mc_func, 'output.mean', n_allineate, 'reference')
+    w.connect(w_masking, 'output.fmap', w_warp, 'input.fmap')
+    w.connect(w_mc_func, 'output.mean', w_warp, 'input.func')
+    w.connect(w_mc_func, 'output.motion_parameters', w_warp, 'input.motion_parameters')
 
-    w.connect(n_allineate, 'out_file', n_qwarp, 'in_file')
-    w.connect(w_mc_func, 'output.mean', n_qwarp, 'base_file')
-
-    w.connect(n_qwarp, 'base_warp', n_merge, 'warp0')  # to check
-    w.connect(w_mc_func, 'output.motion_parameters', n_merge, 'warp1')  # to check
-
-    w.connect(n_merge, 'nwarp', n_apply, 'warp')
+    w.connect(w_warp, 'output.warping', n_apply, 'warp')
     w.connect(w_masking, 'output.func', n_apply, 'in_file')
     w.connect(w_mc_fmap, 'output.mean', n_apply, 'master')
 
     # w.write_graph(graph2use='flat')
     # w.write_graph(graph2use='colored')
+
+    return w
+
+def make_w_warp():
+
+    n_in = Node(IdentityInterface(fields=[
+        'func',
+        'motion_parameters',
+        'fmap',
+        ]), name='input')
+
+    n_out = Node(IdentityInterface(fields=[
+        'warping',
+        ]), name='output')
+
+    n_allineate = allineate()
+
+    n_qwarp = qwarp()
+    n_merge = merge()
+
+    w = Workflow('warping')
+
+    w.connect(n_in, 'fmap', n_allineate, 'in_file')
+    w.connect(n_in, 'func', n_allineate, 'reference')
+
+    w.connect(n_allineate, 'out_file', n_qwarp, 'in_file')
+    w.connect(n_in, 'func', n_qwarp, 'base_file')
+
+    w.connect(n_qwarp, 'base_warp', n_merge, 'warp0')
+    w.connect(n_in, 'motion_parameters', n_merge, 'warp1')
+
+    w.connect(n_merge, 'nwarp', n_out, 'warping')
 
     return w
 
