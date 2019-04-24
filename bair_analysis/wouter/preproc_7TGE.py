@@ -238,9 +238,9 @@ def make_workflow():
         'fmap',
         ]), name='input')
 
-    n_in.inputs.T1w = '/Fridge/users/giovanni/projects/margriet/analysis/preproc_wouter/sub-visual03/ses-UMCU7TGE/msub-visual03_ses-UMCU7TGE_T1w/msub-visual03_ses-UMCU7TGE_T1w.nii'
-    n_in.inputs.fmap = '/Fridge/users/giovanni/projects/margriet/analysis/preproc_wouter/sub-visual03/ses-UMCU7TGE/sub-visual03_ses-UMCU7TGE_acq-GE_dir-R_epi/sub-visual03_ses-UMCU7TGE_acq-GE_dir-R_epi.nii'
-    n_in.inputs.func = '/Fridge/users/giovanni/projects/margriet/analysis/preproc_wouter/sub-visual03/ses-UMCU7TGE/sub-visual03_ses-UMCU7TGE_task-bairspatialpatterns_run-02_bold/sub-visual03_ses-UMCU7TGE_task-bairspatialpatterns_run-02_bold.nii'
+    # n_in.inputs.T1w = '/Fridge/users/giovanni/projects/margriet/analysis/preproc_wouter/sub-visual03/ses-UMCU7TGE/msub-visual03_ses-UMCU7TGE_T1w/msub-visual03_ses-UMCU7TGE_T1w.nii'
+    # n_in.inputs.fmap = '/Fridge/users/giovanni/projects/margriet/analysis/preproc_wouter/sub-visual03/ses-UMCU7TGE/sub-visual03_ses-UMCU7TGE_acq-GE_dir-R_epi/sub-visual03_ses-UMCU7TGE_acq-GE_dir-R_epi.nii'
+    # n_in.inputs.func = '/Fridge/users/giovanni/projects/margriet/analysis/preproc_wouter/sub-visual03/ses-UMCU7TGE/sub-visual03_ses-UMCU7TGE_task-bairspatialpatterns_run-02_bold/sub-visual03_ses-UMCU7TGE_task-bairspatialpatterns_run-02_bold.nii'
 
     w = Workflow('preproc_7TGE')
 
