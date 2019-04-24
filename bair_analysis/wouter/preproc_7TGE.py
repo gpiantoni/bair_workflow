@@ -196,3 +196,110 @@ def warp_apply():
     n.inputs.out_file = 'warped.nii'
 
     return n
+
+
+def mc_mean(data_type='func'):
+    """func or fmap"""
+
+    n_in = Node(IdentityInterface(fields=[
+        'epi',
+        ]), name='input')
+    n_out = Node(IdentityInterface(fields=[
+        'corrected',
+        'mean',
+        'motion_parameters',
+        ]), name='output')
+
+    n_middle = take_middle()
+
+    n_volreg = Node(interface=Volreg(), name='volreg')
+    n_volreg.inputs.outputtype = 'NIFTI'
+
+    n_mean = Node(interface=TStat(), name='mean')
+    n_mean.inputs.args = '-mean'
+    n_mean.inputs.outputtype = 'NIFTI_GZ'
+
+    w = Workflow(name='mc_' + data_type)
+
+    w.connect(n_in, 'epi', n_middle, 'in_file')
+    w.connect(n_in, 'epi', n_volreg, 'in_file')
+    w.connect(n_middle, 'args', n_volreg, 'args')
+    w.connect(n_volreg, 'out_file', n_out, 'bold')
+    w.connect(n_volreg, 'out_file', n_mean, 'in_file')
+    w.connect(n_volreg, 'oned_matrix_save', n_out, 'motion_parameters')
+    w.connect(n_mean, 'out_file', n_out, 'mean')
+
+    return w
+
+
+def make_workflow():
+    n_in = Node(IdentityInterface(fields=[
+        'bold',
+        'fmap',
+        ]), name='input')
+
+    n_in.inputs.T1w = '/Fridge/users/giovanni/projects/margriet/analysis/preproc_wouter/sub-visual03/ses-UMCU7TGE/msub-visual03_ses-UMCU7TGE_T1w/msub-visual03_ses-UMCU7TGE_T1w.nii'
+    n_in.inputs.fmap = '/Fridge/users/giovanni/projects/margriet/analysis/preproc_wouter/sub-visual03/ses-UMCU7TGE/sub-visual03_ses-UMCU7TGE_acq-GE_dir-R_epi/sub-visual03_ses-UMCU7TGE_acq-GE_dir-R_epi.nii'
+    n_in.inputs.func = '/Fridge/users/giovanni/projects/margriet/analysis/preproc_wouter/sub-visual03/ses-UMCU7TGE/sub-visual03_ses-UMCU7TGE_task-bairspatialpatterns_run-02_bold/sub-visual03_ses-UMCU7TGE_task-bairspatialpatterns_run-02_bold.nii'
+
+    w = Workflow('preproc_7TGE')
+
+    w_mc_func = mc_mean('func')
+    w_mc_fmap = mc_mean('fmap')
+    n_allineate = allineate()
+
+    n_mask = Node(interface=Automask(), name='mask_fmap')
+    n_mask.inputs.clfrac = 0.4
+    n_mask.inputs.dilate = 4
+    n_mask.inputs.args = '-nbhrs 15'
+    n_mask.inputs.outputtype = 'NIFTI'
+
+    n_mask1 = Node(interface=Automask(), name='mask_func')
+    n_mask1.inputs.clfrac = 0.4
+    n_mask1.inputs.dilate = 4
+    n_mask1.inputs.args = '-nbhrs 15'
+    n_mask1.inputs.outputtype = 'NIFTI'
+
+    n_mul = Node(interface=BinaryMaths(), name='mul')
+    n_mul.inputs.operation = 'mul'
+
+    n_masking = Node(interface=BinaryMaths(), name='masking')
+    n_masking.inputs.operation = 'mul'
+
+    n_masking_fmap = Node(interface=BinaryMaths(), name='masking_fmap')
+    n_masking_fmap.inputs.operation = 'mul'
+
+    n_qwarp = qwarp()
+    n_merge = merge()
+    n_apply = warp_apply()
+
+    w.connect(n_in, 'fmap', w_mc_fmap, 'input.epi')
+
+    w.connect(n_in, 'func', n_mask1, 'in_file')
+    w.connect(w_mc_fmap, 'output.mean', n_mask, 'in_file')
+    w.connect(n_mask, 'out_file', n_mul, 'in_file')
+    w.connect(n_mask1, 'out_file', n_mul, 'operand_file')
+    w.connect(n_in, 'func', n_masking, 'in_file')
+    w.connect(n_mul, 'out_file', n_masking, 'operand_file')
+    w.connect(n_masking, 'out_file', w_mc_func, 'input.epi')
+
+    w.connect(w_mc_fmap, 'output.mean', n_masking_fmap, 'in_file')
+    w.connect(n_mul, 'out_file', n_masking_fmap, 'operand_file')
+
+    w.connect(n_masking_fmap, 'out_file', n_allineate, 'in_file')
+    w.connect(w_mc_func, 'output.mean', n_allineate, 'reference')
+
+    w.connect(n_allineate, 'out_file', n_qwarp, 'in_file')
+    w.connect(w_mc_func, 'output.mean', n_qwarp, 'base_file')
+
+    w.connect(n_qwarp, 'base_warp', n_merge, 'warp0')  # to check
+    w.connect(w_mc_func, 'output.motion_parameters', n_merge, 'warp1')  # to check
+
+    w.connect(n_merge, 'nwarp', n_apply, 'warp')
+    w.connect(n_masking, 'out_file', n_apply, 'in_file')
+    w.connect(w_mc_fmap, 'output.mean', n_apply, 'master')
+
+    # w.write_graph(graph2use='flat')
+    # w.write_graph(graph2use='colored')
+
+    return w
