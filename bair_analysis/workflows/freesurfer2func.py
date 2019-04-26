@@ -7,7 +7,8 @@ from nipype.pipeline.engine import Workflow, Node
 def make_w_freesurfer2func():
     n_in = Node(IdentityInterface(fields=[
         'T1w',
-        'bold',
+        'func',
+        'subject',  # without sub-
         ]), name='input')
 
     n_out = Node(IdentityInterface(fields=[
@@ -15,10 +16,9 @@ def make_w_freesurfer2func():
         'struct2func',
         'freesurfer2func',
         'func2freesurfer',
-        ]), name='input')
+        ]), name='output')
 
     reconall = Node(ReconAll(), name='reconall')
-    reconall.inputs.subject_id = 'visual05'
     reconall.inputs.directive = 'all'
     reconall.inputs.subjects_dir = '/Fridge/R01_BAIR/freesurfer'
 
@@ -58,6 +58,7 @@ def make_w_freesurfer2func():
 
     w = Workflow('coreg_3T_fs')
     w.connect(n_in, 'T1w', reconall, 'T1_files')
+    w.connect(n_in, 'subject', reconall, 'subject_id')
     w.connect(reconall, 'orig', n_fs2s, 'moving_image')
     w.connect(reconall, 'rawavg', n_fs2s, 'target_image')
     w.connect(n_in, 'func', n_mean, 'in_file')

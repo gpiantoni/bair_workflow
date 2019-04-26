@@ -5,13 +5,17 @@ from nipype.interfaces.utility import IdentityInterface, Function
 from nipype.interfaces.afni import NwarpApply
 
 
-def make_workflow(subject, session, task):
+def make_workflow():
     n_in = Node(IdentityInterface(fields=[
         'func',
         'fmap',
         ]), name='input')
 
-    w = Workflow(f'preproc_{subject}_{session}_{task}')
+    n_out = Node(IdentityInterface(fields=[
+        'func',
+        ]), name='output')
+
+    w = Workflow('preproc')
 
     w_mc_func = make_w_mcmean('func')
     w_mc_fmap = make_w_mcmean('fmap')
@@ -19,7 +23,7 @@ def make_workflow(subject, session, task):
     w_warp = make_w_warp()
 
     n_apply = Node(interface=NwarpApply(), name='warpapply')
-    n_apply.inputs.out_file = f'output_{subject}_{session}_{task}.nii'
+    n_apply.inputs.out_file = 'preprocessed.nii'
 
     w.connect(n_in, 'fmap', w_mc_fmap, 'input.epi')
 
@@ -34,6 +38,8 @@ def make_workflow(subject, session, task):
     w.connect(w_warp, 'output.warping', n_apply, 'warp')
     w.connect(w_masking, 'output.func', n_apply, 'in_file')
     w.connect(w_mc_fmap, 'output.mean', n_apply, 'master')
+
+    w.connect(n_apply, 'out_file', n_out, 'func')
 
     return w
 
