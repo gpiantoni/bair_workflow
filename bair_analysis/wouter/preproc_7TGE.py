@@ -35,9 +35,6 @@ def make_workflow(subject, session, task):
     w.connect(w_masking, 'output.func', n_apply, 'in_file')
     w.connect(w_mc_fmap, 'output.mean', n_apply, 'master')
 
-    # w.write_graph(graph2use='flat')
-    # w.write_graph(graph2use='colored')
-
     return w
 
 
