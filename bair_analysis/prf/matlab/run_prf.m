@@ -6,12 +6,12 @@ if isdeployed
 end
 
 load('/Fridge/users/giovanni/projects/prf_mrvista/mcc/data/images.mat', 'images')
+
 stimulus = {};
 for i = 1:length(n_volumes)
     stimulus{i} = images(:, :, 1:n_volumes(i));
 end
 stimulus = cat(3, stimulus{:});
-size(stimulus)
 
 TR = 0.850;
 

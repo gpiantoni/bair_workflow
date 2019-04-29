@@ -17,10 +17,9 @@ x = [758.52264 784.5972 740.7278 720.98584 760.1906 709.44135 769.3403 694.8644 
 
 results = analyzePRF(images, {x}, TR, struct('seedmode', -2,'display','off'));
 
-results
-
 
 %%
+
 TR = 0.85;
 PATH_TO_APERTURES = '/Fridge/users/margriet/stimuli/BAIR_pRF/bar_apertures.mat';
 BASELINE = 11.9;     % seconds

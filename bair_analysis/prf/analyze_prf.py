@@ -1,5 +1,6 @@
 from subprocess import Popen, PIPE
 from os import environ, pathsep
+from pathlib import Path
 from nibabel import load
 from numpy import where, array, ndindex, NaN, empty, array_split
 
@@ -14,14 +15,12 @@ TO_ADD = [
     ]
 environ['LD_LIBRARY_PATH'] = pathsep.join(TO_ADD)
 
-PRF_PATH = '/Fridge/users/giovanni/projects/prf_mrvista/mcc/run_prf'
-
-# mcc -v -N -m run_prf.m -a /home/giovanni/tools/toolboxes/analyzePRF -a /usr/local/matlab2018a/toolbox/shared/optimlib/ -a /usr/local/matlab2018a/toolbox/stats/stats -a /usr/local/matlab2018a/toolbox/images/iptformats
+PRF_PATH = Path('exec/run_prf').resolve()
 
 s = lambda x: '[' + ' '.join(str(i) for i in x) + ']'
 
 
-def analyze_prf(nii_file, n_vols, n_cpu=30):
+def analyze_prf(nii_file, n_vols, n_cpu=30, threshold=1):
     nii = load(nii_file)
     data = nii.get_data()
 
@@ -29,21 +28,21 @@ def analyze_prf(nii_file, n_vols, n_cpu=30):
 
     x = data.reshape((-1, data.shape[-1]))
 
-    good_voxels = x.mean(axis=1) > 1
+    good_voxels = x.mean(axis=1) > threshold
     x = x[good_voxels, :]
     indices = all_indices[good_voxels, :]
 
     indices = where(good_voxels)[0]
     indices_split = array_split(indices, n_cpu)
 
-    print('submitting processes')
+    print(f'Submitting {n_cpu} processes')
     p_all = []
     for one_index in indices_split:
         cmd = [
             'nice',
             '-n',
             '15',
-            PRF_PATH,
+            str(PRF_PATH),
             nii_file,
             s(n_vols),
             s(one_index),
