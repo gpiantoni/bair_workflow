@@ -15,7 +15,8 @@ TO_ADD = [
     ]
 environ['LD_LIBRARY_PATH'] = pathsep.join(TO_ADD)
 
-PRF_PATH = Path('exec/run_prf').resolve()
+PWD = Path(__file__).resolve().parent
+PRF_PATH = PWD / 'exec' / 'run_prf'
 
 s = lambda x: '[' + ' '.join(str(i) for i in x) + ']'
 
@@ -38,16 +39,19 @@ def analyze_prf(nii_file, n_vols, n_cpu=30, threshold=1):
     print(f'Submitting {n_cpu} processes')
     p_all = []
     for one_index in indices_split:
+        if one_index.shape[0] == 0:
+            continue
         cmd = [
             'nice',
             '-n',
-            '15',
+            '0',
             str(PRF_PATH),
             nii_file,
             s(n_vols),
             s(one_index),
             ]
 
+        print(cmd)
         p_all.append(
             Popen(cmd, env=environ, stdout=PIPE, text=True))
 

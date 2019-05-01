@@ -18,11 +18,15 @@ TR = 0.850;
 nii = niftiread(nii_file);
 x = reshape(nii, [], size(nii, 4));
 
-results = analyzePRF({stimulus}, {x(indices + 1, :)}, TR, struct('seedmode', [0, 1 ], 'display', 'off'));
+if isdeployed
+    x = x(indices + 1, :);
+end
+results = analyzePRF({stimulus}, {x}, TR, struct('seedmode', [0, 1 ], 'display', 'off'));
 
 params = shiftdim(results.params, 1).';
 out = cat(2, params, results.R2);
 
-disp('Results')
-fprintf('=%.20f\n', out.')
-
+if isdeployed
+    disp('Results')
+    fprintf('=%.20f\n', out.')
+end
