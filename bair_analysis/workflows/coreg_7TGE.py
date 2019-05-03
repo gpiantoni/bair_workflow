@@ -3,8 +3,10 @@ from nipype.interfaces.utility import IdentityInterface
 from nipype.interfaces.fsl import MeanImage
 from nipype.interfaces.ants import Registration, ApplyTransforms
 
-def make_w_coreg_7TGE():
 
+def make_w_coreg_7TGE():
+    """Contains examples on how to convert from struct to func and from func to
+    struct"""
     w = Workflow('coreg_7TGE')
 
     n_in = Node(IdentityInterface(fields=[
@@ -14,6 +16,7 @@ def make_w_coreg_7TGE():
 
     n_out = Node(IdentityInterface(fields=[
         'mat_ants',
+        'func',
         ]), name='output')
 
     n_mean = Node(MeanImage(), name='mean')
@@ -39,20 +42,30 @@ def make_w_coreg_7TGE():
     n_coreg.inputs.convergence_window_size = [20, 10]
     n_coreg.inputs.number_of_iterations = [[1000, 500, 200], [500, 200]]
     n_coreg.inputs.restrict_deformation = [[], [1, 1, 0]]
+    n_coreg.inputs.output_warped_image = True
+    n_coreg.inputs.output_inverse_warped_image = True
+
+    n_s2f = Node(ApplyTransforms(), name='ants_struct2func')
+    n_s2f.inputs.dimension = 3
+    n_s2f.inputs.invert_transform_flags = True
+    n_s2f.inputs.interpolation = 'NearestNeighbor'
+
+    n_f2s = Node(ApplyTransforms(), name='ants_func2struct')
+    n_f2s.inputs.dimension = 3
+    n_f2s.inputs.interpolation = 'NearestNeighbor'
+    n_f2s.inputs.default_value = 0
 
     w.connect(n_in, 'func', n_mean, 'in_file')
     w.connect(n_in, 'T1w', n_coreg, 'fixed_image')
     w.connect(n_mean, 'out_file', n_coreg, 'moving_image')
     w.connect(n_coreg, 'forward_transforms', n_out, 'mat_ants')
 
-    """
-    n = Node(ApplyTransforms(), name='antsApply')
-    n.base_dir = B_DIR
-    n.inputs.reference_image = '/Fridge/R01_BAIR/visual_fmri/data/bids/sub-visual02/ses-UMCU7TGE/anat/sub-visual02_ses-UMCU7TGE_T1w.nii.gz'
-    n.inputs.input_image = '/Fridge/users/giovanni/projects/margriet/analysis/preproc_wouter/nipype/full_visual02_7TGE/preproc/warpapply/preprocessed_mean.nii.gz'
-    n.inputs.transforms = res.outputs.forward_transforms
-    n.inputs.dimension = 3
-    n.inputs.interpolation = 'BSpline'
-    """
+    w.connect(n_coreg, 'forward_transforms', n_s2f, 'transforms')
+    w.connect(n_in, 'T1w', n_s2f, 'input_image')
+    w.connect(n_mean, 'out_file', n_s2f, 'reference_image')
+
+    w.connect(n_coreg, 'forward_transforms', n_f2s, 'transforms')
+    w.connect(n_mean, 'out_file', n_f2s, 'input_image')
+    w.connect(n_in, 'T1w', n_f2s, 'reference_image')
 
     return w

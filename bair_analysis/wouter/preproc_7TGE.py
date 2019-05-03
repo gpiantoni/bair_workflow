@@ -5,7 +5,7 @@ from nipype.interfaces.utility import IdentityInterface, Function
 from nipype.interfaces.afni import NwarpApply
 
 
-def make_workflow():
+def make_workflow(n_fmap=10):
     n_in = Node(IdentityInterface(fields=[
         'func',
         'fmap',
@@ -18,7 +18,10 @@ def make_workflow():
     w = Workflow('preproc')
 
     w_mc_func = make_w_mcmean('func')
-    w_mc_fmap = make_w_mcmean('fmap')
+    if n_fmap == 1:  # nipype cannot handle conditional nodes
+        w_mc_fmap = identify_workflow()
+    else:
+        w_mc_fmap = make_w_mcmean('fmap')
     w_masking = make_w_masking()
     w_warp = make_w_warp()
 
@@ -40,6 +43,20 @@ def make_workflow():
     w.connect(w_mc_fmap, 'output.mean', n_apply, 'master')
 
     w.connect(n_apply, 'out_file', n_out, 'func')
+
+    return w
+
+
+def identify_workflow():
+    n_in = Node(IdentityInterface(fields=[
+        'epi',
+        ]), name='input')
+    n_out = Node(IdentityInterface(fields=[
+        'mean',
+        ]), name='output')
+
+    w = Workflow(name='identity')
+    w.connect(n_in, 'epi', n_out, 'mean')
 
     return w
 
@@ -195,7 +212,10 @@ def select_middle_volume(in_file):
     from nibabel import load
 
     img = load(in_file)
-    n_dynamics = img.shape[3]
-    middle_dynamic = n_dynamics // 2
+    if img.ndim == 3:  # only one scan
+        middle_dynamic = 0
+    else:
+        n_dynamics = img.shape[3]
+        middle_dynamic = n_dynamics // 2
 
     return f'-base {middle_dynamic}'
