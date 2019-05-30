@@ -97,7 +97,7 @@ def make_w_mcmean(data_type='func'):
     w.connect(n_in, 'epi', n_middle, 'in_file')
     w.connect(n_in, 'epi', n_volreg, 'in_file')
     w.connect(n_middle, 'args', n_volreg, 'args')
-    w.connect(n_volreg, 'out_file', n_out, 'bold')
+    w.connect(n_volreg, 'out_file', n_out, 'corrected')
     w.connect(n_volreg, 'out_file', n_mean, 'in_file')
     w.connect(n_volreg, 'oned_matrix_save', n_out, 'motion_parameters')
     w.connect(n_mean, 'out_file', n_out, 'mean')
