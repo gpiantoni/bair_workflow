@@ -19,8 +19,11 @@ nii{2} = nii_all(:, :, :, 251:500);
 
 hrf = fast_fslgamma(0:TR:17);
 
-results = analyzePRF(images, nii, TR, struct('seedmode', [0 1 2],'display','off', 'hrf', hrf));
+a = nii{1}(:, :, :, 1);
+vxs = find(a > 250);
 
+results = analyzePRF(images, nii, TR, struct('seedmode', [0 1 2],'display','off', 'hrf', hrf, 'vxs', vxs));
+save('results', 'results')
 
 %%
 
