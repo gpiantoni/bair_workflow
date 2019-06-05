@@ -5,6 +5,7 @@ from nipype.interfaces.matlab import MatlabCommand
 from bair_analysis.wouter.preproc_7TGE import make_workflow
 from bair_analysis.workflows.freesurfer2func import make_w_freesurfer2func
 from bair_analysis.workflows.coreg_7TGE import make_w_coreg_7T, make_w_coreg_7T_7T
+from bair_analysis.workflows.coreg_7T_3T import make_w_coreg_7T_3T
 from bair_analysis.wouter.preproc_7T_coreg import make_w_coreg_3T
 from nibabel import load
 
@@ -56,6 +57,8 @@ def make_w_full_preproc(SUBJECT):
     w_7TSE = make_full_workflow('7TSE', _n_dynamics(n_in.inputs.fmap_7TSE))
     w_3TMB = make_full_workflow('3TMB', _n_dynamics(n_in.inputs.fmap_3TMB))
     w_coreg_7T_7T = make_w_coreg_7T_7T()
+    w_coreg_3T_7TGE = make_w_coreg_7T_3T('GE')
+    w_coreg_3T_7TSE = make_w_coreg_7T_3T('SE')
 
     w.connect(n_in, 'T1w_7TGE', w_7TGE, 'input.T1w')
     w.connect(n_in, 'func_7TGE', w_7TGE, 'input.func')
@@ -69,6 +72,11 @@ def make_w_full_preproc(SUBJECT):
     w.connect(n_in, 'subject', w_3TMB, 'input.subject')
     w.connect(n_in, 'T1w_7TGE', w_coreg_7T_7T, 'input.T1w_GE')
     w.connect(n_in, 'T1w_7TSE', w_coreg_7T_7T, 'input.T1w_SE')
+
+    w.connect(n_in, 'T1w_3TMB', w_coreg_3T_7TGE, 'input.T1w_3T')
+    w.connect(n_in, 'T1w_7TGE', w_coreg_3T_7TGE, 'input.T1w_7T')
+    w.connect(n_in, 'T1w_3TMB', w_coreg_3T_7TSE, 'input.T1w_3T')
+    w.connect(n_in, 'T1w_7TSE', w_coreg_3T_7TSE, 'input.T1w_7T')
 
     return w
 

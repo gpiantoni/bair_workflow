@@ -1,3 +1,11 @@
+addpath('/Fridge/users/giovanni/projects/margriet/scripts/bair_analysis/prf/matlab')
+addpath('~/tools/analyzePRF/')
+addpath('~/tools/analyzePRF/utilities/')
+addpath('/usr/local/freesurfer_6.0.0/fsfast/toolbox')
+
+brain_file = '/Fridge/users/giovanni/projects/margriet/analysis/preproc_wouter/nipype/full_visual11/3TMB/coreg_3T_fs/test/brain_f.nii.gz';
+mask = niftiread(brain_file);
+
 nii_file = '/Fridge/users/giovanni/projects/margriet/analysis/preproc_wouter/nipype/full_visual11/3TMB/preproc/warpapply/preprocessed.nii';
 subject = 'visual11';
 session = '3TMB';
@@ -19,11 +27,21 @@ nii{2} = nii_all(:, :, :, 251:500);
 
 hrf = fast_fslgamma(0:TR:17);
 
-a = nii{1}(:, :, :, 1);
-vxs = find(a > 250);
+vxs = find(mask > 0);
 
 results = analyzePRF(images, nii, TR, struct('seedmode', [0 1 2],'display','off', 'hrf', hrf, 'vxs', vxs));
 save('results', 'results')
+
+hdr.ImageSize = hdr.ImageSize(1:3);
+hdr.PixelDimensions = hdr.PixelDimensions(1:3);
+hdr.Datatype = 'double';
+
+output_dir = '/Fridge/users/giovanni/projects/margriet/analysis/preproc_wouter/nipype/full_visual11/3TMB/coreg_3T_fs/test/results';
+% Output parameters saved in <output_dir>
+fields = {'ang', 'ecc', 'expt', 'rfsize', 'R2', 'gain', 'meanvol'};
+for i = 1:length(fields)
+    niftiwrite(double(results.(fields{i})), fullfile(output_dir, [fields{i}  '.nii']), hdr);
+end
 
 %%
 
