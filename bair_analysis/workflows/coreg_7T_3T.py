@@ -1,6 +1,6 @@
 from os import environ
 
-from nipype.interfaces.fsl import FLIRT, ConvertXFM
+from nipype.interfaces.fsl import FLIRT, ConvertXFM, Reorient2Std
 from nipype.pipeline.engine import Workflow, Node
 from nipype.interfaces.utility import IdentityInterface
 
@@ -15,6 +15,9 @@ def make_w_coreg_7T_3T(ttype=''):
         'mat_t1w3t_to_t1w7t',
         'mat_t1w7t_to_t1w3t',
         ]), name='output')
+
+    n_7T = Node(Reorient2Std(), '7T')
+    n_3T = Node(Reorient2Std(), '3T')
 
     n_coarse = Node(FLIRT(), 'coarse')
     n_coarse.inputs.no_search = True
@@ -34,9 +37,11 @@ def make_w_coreg_7T_3T(ttype=''):
     n_7t_3t.inputs.out_file = 'mat_t1w7t_to_t1w3t.mat'
 
     w = Workflow('coreg_3T_7T' + ttype)
-    w.connect(n_in, 'T1w_7T', n_coarse, 'reference')
-    w.connect(n_in, 'T1w_3T', n_coarse, 'in_file')
-    w.connect(n_in, 'T1w_7T', n_fine, 'reference')
+    w.connect(n_in, 'T1w_7T', n_3T, 'in_file')
+    w.connect(n_in, 'T1w_3T', n_7T, 'in_file')
+    w.connect(n_7T, 'out_file', n_coarse, 'reference')
+    w.connect(n_3T, 'out_file', n_coarse, 'in_file')
+    w.connect(n_7T, 'out_file', n_fine, 'reference')
     w.connect(n_coarse, 'out_file', n_fine, 'in_file')
     w.connect(n_coarse, 'out_matrix_file', n_3t_7t, 'in_file')
     w.connect(n_fine, 'out_matrix_file', n_3t_7t, 'in_file2')
