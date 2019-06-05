@@ -37,8 +37,8 @@ def make_w_coreg_7T_3T(ttype=''):
     n_7t_3t.inputs.out_file = 'mat_t1w7t_to_t1w3t.mat'
 
     w = Workflow('coreg_3T_7T' + ttype)
-    w.connect(n_in, 'T1w_7T', n_3T, 'in_file')
-    w.connect(n_in, 'T1w_3T', n_7T, 'in_file')
+    w.connect(n_in, 'T1w_7T', n_7T, 'in_file')
+    w.connect(n_in, 'T1w_3T', n_3T, 'in_file')
     w.connect(n_7T, 'out_file', n_coarse, 'reference')
     w.connect(n_3T, 'out_file', n_coarse, 'in_file')
     w.connect(n_7T, 'out_file', n_fine, 'reference')
