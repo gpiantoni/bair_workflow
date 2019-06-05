@@ -2,6 +2,7 @@ from nipype.interfaces.fsl import Merge
 from nipype.pipeline.engine import Workflow, Node
 from nipype.interfaces.utility import IdentityInterface
 from nipype.interfaces.matlab import MatlabCommand
+from nipype.interfaces.io import DataSink
 from bair_analysis.wouter.preproc_7TGE import make_workflow
 from bair_analysis.workflows.freesurfer2func import make_w_freesurfer2func
 from bair_analysis.workflows.coreg_7TGE import make_w_coreg_7T, make_w_coreg_7T_7T
@@ -78,6 +79,16 @@ def make_w_full_preproc(SUBJECT):
     w.connect(n_in, 'T1w_3TMB', w_coreg_3T_7TSE, 'input.T1w_3T')
     w.connect(n_in, 'T1w_7TSE', w_coreg_3T_7TSE, 'input.T1w_7T')
 
+    n_sink = Node(DataSink(), 'sink')
+    n_sink.inputs.base_directory = '/Fridge/users/giovanni/projects/margriet/analysis/output'
+    w.connect(n_in, 'T1w_7TGE', n_sink, '7TGE.@t1w')
+    w.connect(w_3TMB, 'output.func', n_sink, '3TMB.@func')
+    w.connect(w_3TMB, 'output.mat_func2struct', n_sink, '3TMB.@mat_func2struct')
+    w.connect(w_7TGE, 'output.func', n_sink, '7TGE.@func')
+    w.connect(w_7TGE, 'output.mat_func2struct', n_sink, '7TGE.@mat_func2struct')
+    w.connect(w_7TSE, 'output.func', n_sink, '7TSE.@func')
+    w.connect(w_7TSE, 'output.mat_func2struct', n_sink, '7TSE.@mat_func2struct')
+
     return w
 
 
@@ -89,6 +100,11 @@ def make_full_workflow(session='7TGE', n_fmap=10):
         'subject',
         ]), name='input')
 
+    n_out = Node(IdentityInterface(fields=[
+        'func',
+        'mat_func2struct',
+        ]), name='output')
+
     n_merge = Node(interface=Merge(), name='merge')
     n_merge.inputs.dimension = 't'
 
@@ -99,11 +115,13 @@ def make_full_workflow(session='7TGE', n_fmap=10):
     w.connect(n_in, 'func', n_merge, 'in_files')
     w.connect(n_merge, 'merged_file', w_preproc, 'input.func')
     w.connect(n_in, 'fmap', w_preproc, 'input.fmap')
+    w.connect(w_preproc, 'output.func', n_out, 'func')
 
     if session.startswith('7T'):
         w_coreg_7T = make_w_coreg_7T()
         w.connect(n_in, 'T1w', w_coreg_7T, 'input.T1w')
         w.connect(w_preproc, 'output.func', w_coreg_7T, 'input.func')
+        w.connect(w_coreg_7T, 'output.mat_ants', n_out, 'mat_func2struct')
 
     else:
         w_coreg = make_w_freesurfer2func()
@@ -115,6 +133,7 @@ def make_full_workflow(session='7TGE', n_fmap=10):
 
         w.connect(n_in, 'T1w', w_coreg_3T, 'input.T1w')
         w.connect(w_preproc, 'output.func', w_coreg_3T, 'input.func')
+        w.connect(w_coreg_3T, 'output.mat_func2struct', n_out, 'mat_func2struct')
 
     return w
 
