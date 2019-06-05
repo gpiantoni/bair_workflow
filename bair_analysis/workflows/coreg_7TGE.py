@@ -105,6 +105,7 @@ def make_w_coreg_7T():
     n_coreg.inputs.restrict_deformation = [[], [1, 1, 0]]
     n_coreg.inputs.output_warped_image = True
     n_coreg.inputs.output_inverse_warped_image = True
+    n_coreg.inputs.output_transform_prefix = 'ants_func2struct'
 
     n_s2f = Node(ApplyTransforms(), name='ants_struct2func')
     n_s2f.inputs.dimension = 3

@@ -81,7 +81,11 @@ def make_w_full_preproc(SUBJECT):
 
     n_sink = Node(DataSink(), 'sink')
     n_sink.inputs.base_directory = '/Fridge/users/giovanni/projects/margriet/analysis/output'
+    n_sink.inputs.remove_dest_dir = True
+    w.connect(n_in, 'subject', n_sink, 'container')
+    w.connect(n_in, 'T1w_3TMB', n_sink, '3TMB.@t1w')
     w.connect(n_in, 'T1w_7TGE', n_sink, '7TGE.@t1w')
+    w.connect(n_in, 'T1w_7TSE', n_sink, '7TSE.@t1w')
     w.connect(w_3TMB, 'output.func', n_sink, '3TMB.@func')
     w.connect(w_3TMB, 'output.mat_func2struct', n_sink, '3TMB.@mat_func2struct')
     w.connect(w_7TGE, 'output.func', n_sink, '7TGE.@func')
