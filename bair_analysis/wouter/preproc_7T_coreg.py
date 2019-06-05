@@ -24,7 +24,8 @@ def make_w_coreg_3T():
     n_allineate.inputs.warp_type = 'shift_rotate'
     n_allineate.inputs.cost = 'nmi'
     n_allineate.inputs.outputtype = 'NIFTI'
-    n_allineate.inputs.out_matrix = 'afni_func2struct.mat'
+    n_allineate.inputs.out_file = 'afni_realigned.nii.gz'
+    n_allineate.inputs.out_matrix = 'afni_realigned.aff12.1D'
 
     w = Workflow('coreg_7T')
     w.connect(n_in, 'func', n_mean, 'in_file')
