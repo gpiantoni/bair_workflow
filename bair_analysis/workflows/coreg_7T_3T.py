@@ -26,7 +26,8 @@ def make_w_coreg_7T_3T(ttype=''):
 
     n_fine = Node(FLIRT(), 'fine')
     n_fine.inputs.no_search = True
-    n_fine.inputs.dof = 6
+    # n_fine.inputs.cost = 'normcorr'
+    n_fine.inputs.dof = 7
 
     n_3t_7t = Node(ConvertXFM(), name='t1w3t_to_t1w7t')
     n_3t_7t.inputs.concat_xfm = True

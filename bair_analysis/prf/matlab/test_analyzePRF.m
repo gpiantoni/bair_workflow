@@ -6,8 +6,8 @@ addpath('/usr/local/freesurfer_6.0.0/fsfast/toolbox')
 brain_file = '/Fridge/users/giovanni/projects/margriet/analysis/preproc_wouter/nipype/full_visual11/3TMB/coreg_3T_fs/test/brain_f.nii.gz';
 mask = niftiread(brain_file);
 
-nii_file = '/Fridge/users/giovanni/projects/margriet/analysis/preproc_wouter/nipype/full_visual11/3TMB/preproc/warpapply/preprocessed.nii';
-subject = 'visual11';
+nii_file = '/Fridge/users/margriet/subjects/bids_umcupreproc/sub-visual05/ses-UMCU3TMB/sub-visual05_ses-UMCU3TMB_task-bairprf_MERGED_bold/sub-visual05_ses-UMCU3TMB_task-bairprf_MERGED_bold-rwm.nii';
+subject = 'visual05';
 session = '3TMB';
 
 n_volumes = 250;
@@ -22,14 +22,14 @@ end
 disp('Loading fMRI')
 nii_all = niftiread(nii_file);
 nii = {};
-nii{1} = nii_all(:, :, :, 1:250);
-nii{2} = nii_all(:, :, :, 251:500);
+nii{1} = nii_all(47, 45, 26, 1:250);
+nii{2} = nii_all(47, 45, 26, 251:500);
 
 hrf = fast_fslgamma(0:TR:17);
 
 vxs = find(mask > 0);
 
-results = analyzePRF(images, nii, TR, struct('seedmode', [0 1 2],'display','off', 'hrf', hrf, 'vxs', vxs));
+results = analyzePRF(images, nii, TR, struct('seedmode', [0 1 2],'display','off', 'hrf', hrf));
 save('results', 'results')
 
 hdr.ImageSize = hdr.ImageSize(1:3);
