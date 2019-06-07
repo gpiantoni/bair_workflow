@@ -24,7 +24,7 @@ def compute_prf(subject, session, nii_file, n_vols, out_dir, threshold=100):
 
     if session == '3TMB':
         orig_res = 658
-        res = False  # to do
+        res = 94
         visual_angle = 6.5175 * 2
     else:
         orig_res = 1394
@@ -122,8 +122,21 @@ def compute_prf(subject, session, nii_file, n_vols, out_dir, threshold=100):
                 eta = start_time + timedelta(seconds=s)
                 lg.info(f'{i_x: 7d}/{len(i_good): 7d}. {elapsed: 8.0f}s. ETA: {eta:%b/%d %H:%M:%S}')
         except KeyboardInterrupt:
-            break
 
+            # re-run it
+            result = least_squares(minimize, [0, 0, 5, 0], method='lm')
+            results[i, :] = result.x
+            _export_data(results, nii, out_dir, subject, session, i_good, data,
+                         xx, yy, TR, images_flat)
+            lg.info('continuing')
+
+    _export_data(results, nii, out_dir, subject, session, i_good, data, xx, yy,
+                 TR, images_flat)
+    lg.info('done')
+
+
+def _export_data(results, nii, out_dir, subject, session, i_good, data, xx, yy,
+                 TR, images_flat):
     lg.info('exporting data')
     phi, rho = polar2clock(results)
 
@@ -147,6 +160,7 @@ def compute_prf(subject, session, nii_file, n_vols, out_dir, threshold=100):
     r2 = empty((data.shape[0], ))
     r2.fill(NaN)
     for i_x in range(len(i_good)):
+        i = i_good[i_x]
         x_fit = predict(results[i, :], xx, yy, TR, images_flat)
         x_vox = n(data[i, :])
         r2[i] = corrcoef(x_fit, x_vox)[0, 1] ** 2 * 100
