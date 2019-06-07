@@ -2,23 +2,22 @@
 from popeye.utilities import double_gamma_hrf
 from scipy.signal import convolve
 from scipy.optimize import least_squares
-from numpy import concatenate, ones, c_, zeros, arange, r_, dot, mean, max, meshgrid, pi, abs, std, where, dot, corrcoef, isnan, exp, empty
-from numpy import cos, sin, arctan2, pi, mod, NaN, zeros, sqrt
+from numpy import concatenate, ones, c_, zeros, arange, r_, mean, max, meshgrid, pi, abs, std, where, dot, corrcoef, exp, empty
+from numpy import arctan2, mod, NaN, sqrt
 from time import time
 from datetime import datetime, timedelta
 from skimage.transform import resize
 from numpy.linalg import lstsq
-from popeye.utilities import double_gamma_hrf
-from scipy.signal import convolve
-from scipy.optimize import least_squares
 from pathlib import Path
 from nibabel import Nifti1Image, load
 from scipy.io import loadmat
 from argparse import ArgumentParser
-
+from logging import getLogger, StreamHandler, Formatter, INFO, DEBUG
 
 
 STIM_FILE = '/Fridge/R01_BAIR/visual_fmri/data/bids/stimuli/sub-{}_ses-UMCU{}_task-bairprf_run-{:02d}.mat'
+
+lg = getLogger('prf')
 
 
 def compute_prf(subject, session, nii_file, n_vols, out_dir, threshold=100):
@@ -32,12 +31,13 @@ def compute_prf(subject, session, nii_file, n_vols, out_dir, threshold=100):
         res = 82
         visual_angle = 6.428 * 2
 
+    lg.info('loading data')
     nii = load(nii_file)
 
     TR = nii.header.get_zooms()[3]
-
     assert sum(n_vols) == nii.shape[3]
 
+    lg.info('loading stimuli')
     all_img = []
     baseline = int(11.9 / TR)
 
@@ -56,6 +56,7 @@ def compute_prf(subject, session, nii_file, n_vols, out_dir, threshold=100):
     tmp[st == 128] = 0
     tmp[st == 0] = 0
 
+    lg.info('resampling stimuli')
     images = resize(tmp, (res, res), anti_aliasing=True)
 
     images[images > .1] = 1
@@ -63,6 +64,7 @@ def compute_prf(subject, session, nii_file, n_vols, out_dir, threshold=100):
 
     images_flat = images.reshape(-1, sum(n_vols))
 
+    lg.info('cleaning up data')
     data = nii.get_data().copy().reshape(-1, sum(n_vols))
     mask = mean(data, axis=1) > 100
     i_good = where(mask)[0]
@@ -88,6 +90,7 @@ def compute_prf(subject, session, nii_file, n_vols, out_dir, threshold=100):
     results = empty((data.shape[0], 4))
     results.fill(NaN)
 
+    lg.info('starting computation about prf')
     t = time()
     start_time = datetime.now()
 
@@ -117,10 +120,11 @@ def compute_prf(subject, session, nii_file, n_vols, out_dir, threshold=100):
                 elapsed = time() - t
                 s = elapsed / (i_x + 1) * len(i_good)
                 eta = start_time + timedelta(seconds=s)
-                print(f'{i_x: 7d}/{len(i_good): 7d}. {elapsed: 8.f}s. ETA: {eta:%b/%d %H:%M:%S}')
+                lg.info(f'{i_x: 7d}/{len(i_good): 7d}. {elapsed: 8.0f}s. ETA: {eta:%b/%d %H:%M:%S}')
         except KeyboardInterrupt:
             break
 
+    lg.info('exporting data')
     phi, rho = polar2clock(results)
 
     out_nii = Nifti1Image(phi.reshape(nii.shape[:3]), nii.affine)
@@ -131,13 +135,39 @@ def compute_prf(subject, session, nii_file, n_vols, out_dir, threshold=100):
     out_file = Path(out_dir) / f'{subject}_{session}_rho.nii.gz'
     out_nii.to_filename(str(out_file))
 
-    out_nii = Nifti1Image(results[:, 2].reshape(nii.shape[:3]), nii.affine)
+    out_nii = Nifti1Image(abs(results[:, 2].reshape(nii.shape[:3])), nii.affine)
     out_file = Path(out_dir) / f'{subject}_{session}_sigma.nii.gz'
     out_nii.to_filename(str(out_file))
 
     out_nii = Nifti1Image(results[:, 3].reshape(nii.shape[:3]), nii.affine)
     out_file = Path(out_dir) / f'{subject}_{session}_hrf.nii.gz'
     out_nii.to_filename(str(out_file))
+
+    lg.info('converting to r2')
+    r2 = empty((data.shape[0], ))
+    r2.fill(NaN)
+    for i_x in range(len(i_good)):
+        x_fit = predict(results[i, :], xx, yy, TR, images_flat)
+        x_vox = n(data[i, :])
+        r2[i] = corrcoef(x_fit, x_vox)[0, 1] ** 2 * 100
+    out_nii = Nifti1Image(r2.reshape(nii.shape[:3]), nii.affine)
+    out_file = Path(out_dir) / f'{subject}_{session}_r2.nii.gz'
+    out_nii.to_filename(str(out_file))
+
+
+def predict(params, xx, yy, TR, images_flat):
+    x0 = params[0]
+    y0 = params[1]
+    sigma = params[2]
+    gaussian2d = exp(-((xx - x0) ** 2 + (yy - y0) ** 2) / (2 * abs(sigma) ** 2)) * (2 * pi * abs(sigma) ** 2)
+
+    out = dot(gaussian2d.flatten(), images_flat)
+
+    hrf = double_gamma_hrf(params[3], TR)
+    full_hrf = r_[zeros(hrf.shape[0]), hrf]
+
+    out_hrf = convolve(out, full_hrf, 'same')
+    return n(out_hrf)
 
 
 def n(x):
@@ -173,6 +203,17 @@ if __name__ == '__main__':
     print(args)
 
     n_vols = [int(x) for x in args.n_vols]
+
+    DATE_FORMAT = '%H:%M:%S'
+    lg.setLevel(INFO)
+    FORMAT = '{asctime:<10}{message}'
+
+    formatter = Formatter(fmt=FORMAT, datefmt=DATE_FORMAT, style='{')
+    handler = StreamHandler()
+    handler.setFormatter(formatter)
+
+    lg.handlers = []
+    lg.addHandler(handler)
 
     compute_prf(args.subject, args.session, args.nii_file, n_vols,
                 args.out_dir, float(args.threshold))
