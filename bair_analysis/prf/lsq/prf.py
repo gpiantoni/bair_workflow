@@ -96,7 +96,11 @@ def compute_prf(subject, session, nii_file, n_vols, out_dir, threshold=100):
 
     for i_x, i in enumerate(i_good):
 
-        x_vox = n(data[i, :])
+        try:
+            x_vox = n(data[i, :])
+        except KeyboardInterrupt:
+            # ignore if KeyboardInterrupt happens here
+            x_vox = n(data[i, :])
 
         def minimize(params):
             x0 = params[0]
