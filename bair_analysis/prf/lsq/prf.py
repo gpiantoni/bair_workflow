@@ -12,7 +12,7 @@ from pathlib import Path
 from nibabel import Nifti1Image, load
 from scipy.io import loadmat
 from argparse import ArgumentParser
-from logging import getLogger, StreamHandler, Formatter, INFO, DEBUG
+from logging import getLogger, StreamHandler, Formatter, INFO
 
 
 STIM_FILE = '/Fridge/R01_BAIR/visual_fmri/data/bids/stimuli/sub-{}_ses-UMCU{}_task-bairprf_run-{:02d}.mat'

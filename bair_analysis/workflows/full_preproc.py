@@ -5,8 +5,7 @@ from nipype.interfaces.matlab import MatlabCommand
 from nipype.interfaces.io import DataSink
 from bair_analysis.wouter.preproc_7TGE import make_workflow
 from bair_analysis.workflows.freesurfer2func import make_w_freesurfer2func
-from bair_analysis.workflows.coreg_7TGE import make_w_coreg_7T, make_w_coreg_7T_7T
-from bair_analysis.workflows.coreg_7T_3T import make_w_coreg_7T_3T
+from bair_analysis.workflows.coreg_7TGE import make_w_coreg_7T, make_w_coreg_7T_7T, make_w_coreg_7T_3T
 from bair_analysis.wouter.preproc_7T_coreg import make_w_coreg_3T
 from nibabel import load
 
@@ -96,6 +95,8 @@ def make_w_full_preproc(SUBJECT):
     w.connect(w_7TGE, 'output.mat_func2struct', n_sink, '7TGE.@mat_func2struct')
     w.connect(w_7TSE, 'output.func', n_sink, '7TSE.@func')
     w.connect(w_7TSE, 'output.mat_func2struct', n_sink, '7TSE.@mat_func2struct')
+    w.connect(w_coreg_3T_7TGE, 'output.mat_ants', n_sink, '7TGE.@mat_3T_to_7T')
+    w.connect(w_coreg_3T_7TSE, 'output.mat_ants', n_sink, '7TSE.@mat_3T_to_7T')
 
     return w
 
