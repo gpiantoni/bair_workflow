@@ -19,10 +19,11 @@ def make_w_coreg_7T_3T(session=''):
         ]), name='output')
 
     n_coreg = Node(Registration(), name='antsReg')
+    n_coreg.inputs.use_histogram_matching = False
     n_coreg.inputs.dimension = 3
-    n_coreg.inputs.winsorize_lower_quantile = 0.005
-    n_coreg.inputs.winsorize_upper_quantile = 0.995
-    n_coreg.inputs.float = True
+    n_coreg.inputs.winsorize_lower_quantile = 0.001
+    n_coreg.inputs.winsorize_upper_quantile = 0.999
+    n_coreg.inputs.float = False
     n_coreg.inputs.interpolation = 'Linear'
     n_coreg.inputs.transforms = ['Translation', 'Rigid']
     n_coreg.inputs.transform_parameters = [[0.1, ], [0.1, ]]
@@ -30,16 +31,16 @@ def make_w_coreg_7T_3T(session=''):
     n_coreg.inputs.metric_weight = [1, 1]
     n_coreg.inputs.radius_or_number_of_bins = [32, 32]
     n_coreg.inputs.sampling_strategy = ['Regular', 'Regular']
-    n_coreg.inputs.sampling_percentage = [0.25, 0.25]
-    n_coreg.inputs.sigma_units = ['vox', 'vox']
+    n_coreg.inputs.sampling_percentage = [0.25, 0.5]
+    n_coreg.inputs.sigma_units = ['vox', 'mm']
     n_coreg.inputs.convergence_threshold = [1e-6, 1e-6]
-    n_coreg.inputs.smoothing_sigmas = [[4, 2, 0], [4, 3, 2, 1]]
-    n_coreg.inputs.shrink_factors = [[5, 2, 1], [12, 8, 4, 2]]
+    n_coreg.inputs.smoothing_sigmas = [[8, 4, 0], [1, 0]]
+    n_coreg.inputs.shrink_factors = [[5, 3, 1], [1, 1]]
     n_coreg.inputs.convergence_window_size = [20, 10]
-    n_coreg.inputs.number_of_iterations = [[1000, 500, 200], [1000, 500, 250, 100]]
+    n_coreg.inputs.number_of_iterations = [[1000, 500, 200], [250, 100]]
     n_coreg.inputs.output_warped_image = True
     n_coreg.inputs.output_inverse_warped_image = True
-    n_coreg.inputs.output_prefix = 'ants_3T_to_7T' + session
+    n_coreg.inputs.output_transform_prefix = 'ants_3T_to_7T' + session
 
     n_7t23t = Node(ApplyTransforms(), name='ants_7t23t')
     n_7t23t.inputs.dimension = 3
@@ -51,17 +52,17 @@ def make_w_coreg_7T_3T(session=''):
     n_3t27t.inputs.interpolation = 'Linear'
     n_3t27t.inputs.default_value = 0
 
-    w.connect(n_in, 'T1w_7T', n_coreg, 'moving_image')
-    w.connect(n_in, 'T1w_3T', n_coreg, 'fixed_image')
+    w.connect(n_in, 'T1w_3T', n_coreg, 'moving_image')
+    w.connect(n_in, 'T1w_7T', n_coreg, 'fixed_image')
     w.connect(n_coreg, 'forward_transforms', n_out, 'mat_ants')
 
     w.connect(n_coreg, 'forward_transforms', n_7t23t, 'transforms')
-    w.connect(n_in, 'T1w_3T', n_7t23t, 'input_image')
-    w.connect(n_in, 'T1w_7T', n_7t23t, 'reference_image')
+    w.connect(n_in, 'T1w_7T', n_7t23t, 'input_image')
+    w.connect(n_in, 'T1w_3T', n_7t23t, 'reference_image')
 
     w.connect(n_coreg, 'forward_transforms', n_3t27t, 'transforms')
-    w.connect(n_in, 'T1w_7T', n_3t27t, 'input_image')
-    w.connect(n_in, 'T1w_3T', n_3t27t, 'reference_image')
+    w.connect(n_in, 'T1w_3T', n_3t27t, 'input_image')
+    w.connect(n_in, 'T1w_7T', n_3t27t, 'reference_image')
 
     return w
 
