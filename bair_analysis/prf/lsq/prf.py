@@ -15,12 +15,12 @@ from argparse import ArgumentParser
 from logging import getLogger, StreamHandler, Formatter, INFO
 
 
-STIM_FILE = '/Fridge/R01_BAIR/visual_fmri/data/bids/stimuli/sub-{}_ses-UMCU{}_task-bairprf_run-{:02d}.mat'
+STIM_FILE = '/Fridge/R01_BAIR/visual_fmri/data/bids/stimuli/sub-{}_ses-UMCU{}_task-bairprf_run-0{}.mat'
 
 lg = getLogger('prf')
 
 
-def compute_prf(subject, session, nii_file, n_vols, out_dir, threshold=100):
+def compute_prf(subject, session, nii_file1, nii_file2, out_dir, threshold=100):
 
     if session == '3TMB':
         orig_res = 658
@@ -32,22 +32,27 @@ def compute_prf(subject, session, nii_file, n_vols, out_dir, threshold=100):
         visual_angle = 6.428 * 2
 
     lg.info('loading data')
-    nii = load(nii_file)
-
-    TR = nii.header.get_zooms()[3]
-    assert sum(n_vols) == nii.shape[3]
+    nii = {
+        '1': load(nii_file1),
+        '2': load(nii_file2),
+        }
+    TR = nii['1'].header.get_zooms()[3]
 
     lg.info('loading stimuli')
     all_img = []
     baseline = int(11.9 / TR)
 
-    for run, n_vol in enumerate(n_vols):
+    n_vols = []
+    for run in ['1', '2']:
+        n_vol = nii['1'].shape[3]
+        n_vols.append(n_vol)
 
-        img = loadmat(STIM_FILE.format(subject, session, run + 1))
+        img = loadmat(STIM_FILE.format(subject, session, run))
         images = img['stimulus']['images'][0, 0]
 
         b_img = zeros((images.shape[0], images.shape[1], baseline))
         c = concatenate((b_img, images, b_img), 2)
+
         all_img.append(c[:, :, :n_vol].copy())
 
     st = concatenate(all_img, 2)
@@ -65,7 +70,8 @@ def compute_prf(subject, session, nii_file, n_vols, out_dir, threshold=100):
     images_flat = images.reshape(-1, sum(n_vols))
 
     lg.info('cleaning up data')
-    data = nii.get_data().copy().reshape(-1, sum(n_vols))
+    data = concatenate((nii['1'].get_data(), nii['2'].get_data()), axis=3)
+    data = data.reshape(-1, sum(n_vols))
     mask = mean(data, axis=1) > 100
     i_good = where(mask)[0]
 
@@ -214,16 +220,12 @@ if __name__ == '__main__':
     parser = ArgumentParser(prog='prf')
     parser.add_argument('subject')
     parser.add_argument('session')
-    parser.add_argument('nii_file')
+    parser.add_argument('nii_run1')
+    parser.add_argument('nii_run2')
     parser.add_argument('out_dir')
     parser.add_argument('threshold')
-    parser.add_argument('--n_vols', nargs=2)
 
     args = parser.parse_args()
-
-    print(args)
-
-    n_vols = [int(x) for x in args.n_vols]
 
     DATE_FORMAT = '%H:%M:%S'
     lg.setLevel(INFO)
@@ -236,6 +238,5 @@ if __name__ == '__main__':
     lg.handlers = []
     lg.addHandler(handler)
 
-    compute_prf(args.subject, args.session, args.nii_file, n_vols,
+    compute_prf(args.subject, args.session, args.nii_run1, args.nii_run2,
                 args.out_dir, float(args.threshold))
-
