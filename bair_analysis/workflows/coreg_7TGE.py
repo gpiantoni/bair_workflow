@@ -1,6 +1,5 @@
 from nipype.pipeline.engine import Workflow, Node
 from nipype.interfaces.utility import IdentityInterface
-from nipype.interfaces.fsl import MeanImage
 from nipype.interfaces.ants import Registration, ApplyTransforms
 
 
@@ -136,16 +135,12 @@ def make_w_coreg_7T():
 
     n_in = Node(IdentityInterface(fields=[
         'T1w',
-        'func',
+        'mean',
         ]), name='input')
 
     n_out = Node(IdentityInterface(fields=[
         'mat_ants',
-        'func',
         ]), name='output')
-
-    n_mean = Node(MeanImage(), name='mean')
-    n_mean.dimension = 'T'
 
     n_coreg = Node(Registration(), name='antsReg')
     n_coreg.inputs.winsorize_lower_quantile = 0.005
@@ -181,17 +176,16 @@ def make_w_coreg_7T():
     n_f2s.inputs.interpolation = 'NearestNeighbor'
     n_f2s.inputs.default_value = 0
 
-    w.connect(n_in, 'func', n_mean, 'in_file')
     w.connect(n_in, 'T1w', n_coreg, 'fixed_image')
-    w.connect(n_mean, 'out_file', n_coreg, 'moving_image')
+    w.connect(n_in, 'mean', n_coreg, 'moving_image')
     w.connect(n_coreg, 'forward_transforms', n_out, 'mat_ants')
 
     w.connect(n_coreg, 'forward_transforms', n_s2f, 'transforms')
     w.connect(n_in, 'T1w', n_s2f, 'input_image')
-    w.connect(n_mean, 'out_file', n_s2f, 'reference_image')
+    w.connect(n_in, 'mean', n_s2f, 'reference_image')
 
     w.connect(n_coreg, 'forward_transforms', n_f2s, 'transforms')
-    w.connect(n_mean, 'out_file', n_f2s, 'input_image')
+    w.connect(n_in, 'mean', n_f2s, 'input_image')
     w.connect(n_in, 'T1w', n_f2s, 'reference_image')
 
     return w

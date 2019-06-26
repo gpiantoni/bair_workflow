@@ -1,4 +1,4 @@
-from nipype.interfaces.fsl import MeanImage, FLIRT, ConvertXFM
+from nipype.interfaces.fsl import FLIRT, ConvertXFM
 from nipype.interfaces.utility import IdentityInterface
 from nipype.interfaces.freesurfer import Tkregister2, ApplyVolTransform, ReconAll
 from nipype.pipeline.engine import Workflow, Node
@@ -7,7 +7,7 @@ from nipype.pipeline.engine import Workflow, Node
 def make_w_freesurfer2func():
     n_in = Node(IdentityInterface(fields=[
         'T1w',
-        'func',
+        'mean',
         'subject',  # without sub-
         ]), name='input')
 
@@ -35,8 +35,6 @@ def make_w_freesurfer2func():
     n_vol.inputs.reg_header = True
     n_vol.inputs.transformed_file = 'brain.nii.gz'
 
-    n_mean = Node(MeanImage(), name='mean')
-
     n_f2s = Node(FLIRT(), name='func2struct')
     n_f2s.inputs.cost = 'corratio'
     n_f2s.inputs.dof = 6
@@ -61,10 +59,9 @@ def make_w_freesurfer2func():
     w.connect(n_in, 'subject', reconall, 'subject_id')
     w.connect(reconall, 'orig', n_fs2s, 'moving_image')
     w.connect(reconall, 'rawavg', n_fs2s, 'target_image')
-    w.connect(n_in, 'func', n_mean, 'in_file')
     w.connect(reconall, 'brain', n_vol, 'source_file')
     w.connect(reconall, 'rawavg', n_vol, 'target_file')
-    w.connect(n_mean, 'out_file', n_f2s, 'in_file')
+    w.connect(n_in, 'mean', n_f2s, 'in_file')
     w.connect(n_vol, 'transformed_file', n_f2s, 'reference')
     w.connect(n_f2s, 'out_matrix_file', n_s2f, 'in_file')
     w.connect(n_fs2s, 'fsl_file', n_s2fs, 'in_file')

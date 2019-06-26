@@ -1,5 +1,5 @@
 from nipype.interfaces.afni import Volreg, TStat, Automask, Allineate, Qwarp
-from nipype.interfaces.fsl import BinaryMaths
+from nipype.interfaces.fsl import BinaryMaths, ExtractROI
 from nipype.pipeline.engine import Workflow, Node
 from nipype.interfaces.utility import IdentityInterface, Function
 from nipype.interfaces.afni import NwarpApply
@@ -12,7 +12,9 @@ def make_workflow(n_fmap=10):
         ]), name='input')
 
     n_out = Node(IdentityInterface(fields=[
-        'func',
+        'func1',
+        'func2',
+        'mean',
         ]), name='output')
 
     w = Workflow('preproc')
@@ -28,6 +30,16 @@ def make_workflow(n_fmap=10):
     n_apply = Node(interface=NwarpApply(), name='warpapply')
     n_apply.inputs.out_file = 'preprocessed.nii'
 
+    n_mean = Node(interface=TStat(), name='mean')
+    n_mean.inputs.args = '-mean'
+    n_mean.inputs.outputtype = 'NIFTI_GZ'
+
+    n_roi1 = Node(ExtractROI(), 'split1')
+    n_roi1.inputs.t_min = 0
+    n_roi1.inputs.roi_file = 'preprocessed_1.nii.gz'
+    n_roi2 = Node(ExtractROI(), 'split2')
+    n_roi2.inputs.roi_file = 'preprocessed_2.nii.gz'
+
     w.connect(n_in, 'fmap', w_mc_fmap, 'input.epi')
 
     w.connect(w_mc_fmap, 'output.mean', w_masking, 'input.fmap')
@@ -41,8 +53,17 @@ def make_workflow(n_fmap=10):
     w.connect(w_warp, 'output.warping', n_apply, 'warp')
     w.connect(w_masking, 'output.func', n_apply, 'in_file')
     w.connect(w_mc_fmap, 'output.mean', n_apply, 'master')
+    w.connect(n_apply, 'out_file', n_mean, 'in_file')
 
-    w.connect(n_apply, 'out_file', n_out, 'func')
+    w.connect(n_apply, 'out_file', n_roi1, 'in_file')
+    w.connect(n_apply, ('out_file', _half_dynamics), n_roi1, 't_size')
+    w.connect(n_apply, 'out_file', n_roi2, 'in_file')
+    w.connect(n_apply, ('out_file', _half_dynamics), n_roi2, 't_min')
+    w.connect(n_apply, ('out_file', _half_dynamics), n_roi2, 't_size')
+
+    w.connect(n_mean, 'out_file', n_out, 'mean')
+    w.connect(n_roi1, 'roi_file', n_out, 'func1')
+    w.connect(n_roi2, 'roi_file', n_out, 'func2')
 
     return w
 
@@ -219,3 +240,10 @@ def select_middle_volume(in_file):
         middle_dynamic = n_dynamics // 2
 
     return f'-base {middle_dynamic}'
+
+
+def _half_dynamics(in_file):
+    from nibabel import load
+
+    nii = load(in_file)
+    return nii.shape[3] // 2

@@ -1,48 +1,9 @@
-from nipype.interfaces.fsl import Merge as FSLMerge
 from nipype.pipeline.engine import Workflow, Node
-from nipype.interfaces.utility import IdentityInterface, Merge
-from nipype.interfaces.fsl import ExtractROI
+from nipype.interfaces.utility import IdentityInterface
 from nipype.interfaces.afni import TStat, Automask, Detrend, TSmooth, Calc
 
-def make_w_filtering():
-    n_in = Node(IdentityInterface(fields=[
-        'func'
-        ]), name='input')
-    n_out = Node(IdentityInterface(fields=[
-        'func'
-        ]), name='output')
 
-    n_roi1 = Node(ExtractROI(), 'roi1')
-    n_roi1.inputs.t_min = 0
-    n_roi1.inputs.roi_file = 'preprocessed_1.nii.gz'
-    n_roi2 = Node(ExtractROI(), 'roi2')
-    n_roi2.inputs.roi_file = 'preprocessed_2.nii.gz'
-
-    w_smooth1 = make_smooth('1')
-    w_smooth2 = make_smooth('2')
-
-    n_mi = Node(Merge(2), 'merge_list')
-
-    n_merge = Node(interface=FSLMerge(), name='merge')
-    n_merge.inputs.dimension = 't'
-
-    w = Workflow('filtering')
-    w.connect(n_in, 'func', n_roi1, 'in_file')
-    w.connect(n_in, ('func', _half_dynamics), n_roi1, 't_size')
-    w.connect(n_in, 'func', n_roi2, 'in_file')
-    w.connect(n_in, ('func', _half_dynamics), n_roi2, 't_min')
-    w.connect(n_in, ('func', _half_dynamics), n_roi2, 't_size')
-    w.connect(n_roi1, 'roi_file', w_smooth1, 'input.func')
-    w.connect(n_roi2, 'roi_file', w_smooth2, 'input.func')
-    w.connect(w_smooth1, 'output.func', n_mi, 'in1')
-    w.connect(w_smooth2, 'output.func', n_mi, 'in2')
-    w.connect(n_mi, 'out', n_merge, 'in_files')
-    w.connect(n_merge, 'merged_file', n_out, 'func')
-
-    return w
-
-
-def make_smooth(roi=''):
+def make_w_smooth(roi=''):
     w = Workflow('filt' + roi)
 
     n_in = Node(IdentityInterface(fields=[
@@ -71,7 +32,7 @@ def make_smooth(roi=''):
     n_c = Node(Calc(), 'calc')
     n_c.inputs.args = '-datum float'
     n_c.inputs.expr = 'step(a)*(b+c)'
-    n_c.inputs.out_file = 'filtered.nii.gz'
+    n_c.inputs.out_file = f'filtered_{roi}.nii.gz'
 
     w.connect(n_in, 'func', n_t, 'in_file')
     w.connect(n_t, 'out_file', n_mask, 'in_file')

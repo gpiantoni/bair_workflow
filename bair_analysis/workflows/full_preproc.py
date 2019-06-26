@@ -5,12 +5,14 @@ from nipype.interfaces.matlab import MatlabCommand
 from nipype.interfaces.io import DataSink
 from bair_analysis.wouter.preproc_7TGE import make_workflow
 from bair_analysis.workflows.freesurfer2func import make_w_freesurfer2func
-from bair_analysis.workflows.filtering import make_w_filtering
+from bair_analysis.workflows.filtering import make_w_smooth
 from bair_analysis.workflows.coreg_7TGE import make_w_coreg_7T, make_w_coreg_7T_7T
 from bair_analysis.wouter.preproc_7T_coreg import make_w_coreg_3T
 from nibabel import load
 
 MatlabCommand.set_default_paths('/home/giovanni/tools/spm12')
+
+TECHNIQUES = ['3TMB', '7TGE', '7TSE']
 
 
 def make_w_full_preproc(SUBJECT):
@@ -54,21 +56,19 @@ def make_w_full_preproc(SUBJECT):
         f'/Fridge/R01_BAIR/visual_fmri/data/bids/sub-{SUBJECT}/ses-UMCU7TSE/func/sub-{SUBJECT}_ses-UMCU7TSE_task-bairprf_run-02_bold.nii.gz'
         ]
 
-    w_7TGE = make_full_workflow('7TGE', _n_dynamics(n_in.inputs.fmap_7TGE))
-    w_7TSE = make_full_workflow('7TSE', _n_dynamics(n_in.inputs.fmap_7TSE))
-    w_3TMB = make_full_workflow('3TMB', _n_dynamics(n_in.inputs.fmap_3TMB))
+    w_pr = {
+        '7TGE': make_full_workflow('7TGE', _n_dynamics(n_in.inputs.fmap_7TGE)),
+        '7TSE': make_full_workflow('7TSE', _n_dynamics(n_in.inputs.fmap_7TSE)),
+        '3TMB': make_full_workflow('3TMB', _n_dynamics(n_in.inputs.fmap_3TMB)),
+        }
     w_coreg_7T_7T = make_w_coreg_7T_7T()
 
-    w.connect(n_in, 'T1w_7TGE', w_7TGE, 'input.T1w')
-    w.connect(n_in, 'func_7TGE', w_7TGE, 'input.func')
-    w.connect(n_in, 'fmap_7TGE', w_7TGE, 'input.fmap')
-    w.connect(n_in, 'T1w_7TSE', w_7TSE, 'input.T1w')
-    w.connect(n_in, 'func_7TSE', w_7TSE, 'input.func')
-    w.connect(n_in, 'fmap_7TSE', w_7TSE, 'input.fmap')
-    w.connect(n_in, 'T1w_3TMB', w_3TMB, 'input.T1w')
-    w.connect(n_in, 'func_3TMB', w_3TMB, 'input.func')
-    w.connect(n_in, 'fmap_3TMB', w_3TMB, 'input.fmap')
-    w.connect(n_in, 'subject', w_3TMB, 'input.subject')
+    for t in TECHNIQUES:
+        w.connect(n_in, 'T1w_' + t, w_pr[t], 'input.T1w')
+        w.connect(n_in, 'func_' + t, w_pr[t], 'input.func')
+        w.connect(n_in, 'fmap_' + t, w_pr[t], 'input.fmap')
+    w.connect(n_in, 'subject', w_pr['3TMB'], 'input.subject')
+
     w.connect(n_in, 'T1w_7TGE', w_coreg_7T_7T, 'input.T1w_GE')
     w.connect(n_in, 'T1w_7TSE', w_coreg_7T_7T, 'input.T1w_SE')
 
@@ -83,15 +83,12 @@ def make_w_full_preproc(SUBJECT):
     w.connect(n_in, 'T1w_3TMB', n_sink, '3TMB.@t1w')
     w.connect(n_in, 'T1w_7TGE', n_sink, '7TGE.@t1w')
     w.connect(n_in, 'T1w_7TSE', n_sink, '7TSE.@t1w')
-    w.connect(w_3TMB, 'output.func', n_sink, '3TMB.@func')
-    w.connect(w_3TMB, 'output.filtered', n_sink, '3TMB.@filtered')
-    w.connect(w_3TMB, 'output.mat_func2struct', n_sink, '3TMB.@mat_func2struct')
-    w.connect(w_7TGE, 'output.func', n_sink, '7TGE.@func')
-    w.connect(w_7TGE, 'output.filtered', n_sink, '7TGE.@filtered')
-    w.connect(w_7TGE, 'output.mat_func2struct', n_sink, '7TGE.@mat_func2struct')
-    w.connect(w_7TSE, 'output.func', n_sink, '7TSE.@func')
-    w.connect(w_7TSE, 'output.mat_func2struct', n_sink, '7TSE.@mat_func2struct')
-    w.connect(w_7TSE, 'output.filtered', n_sink, '7TSE.@filtered')
+
+    for t in TECHNIQUES:
+        w.connect(w_pr[t], 'output.mat_func2struct', n_sink, t + '.@mat_func2struct')
+        for s in ('1', '2'):
+            for f in ('func', 'filtered'):
+                w.connect(w_pr[t], f'output.{f}{s}', n_sink, f'{t}.@{f}{s}')
 
     return w
 
@@ -105,8 +102,10 @@ def make_full_workflow(session='7TGE', n_fmap=10):
         ]), name='input')
 
     n_out = Node(IdentityInterface(fields=[
-        'func',
-        'filtered',
+        'func1',
+        'func2',
+        'filtered1',
+        'filtered2',
         'mat_func2struct',
         ]), name='output')
 
@@ -114,21 +113,26 @@ def make_full_workflow(session='7TGE', n_fmap=10):
     n_merge.inputs.dimension = 't'
 
     w_preproc = make_workflow(n_fmap)
-    w_filtering = make_w_filtering()
+
+    w_smooth1 = make_w_smooth('1')
+    w_smooth2 = make_w_smooth('2')
 
     w = Workflow(session)
 
     w.connect(n_in, 'func', n_merge, 'in_files')
     w.connect(n_merge, 'merged_file', w_preproc, 'input.func')
     w.connect(n_in, 'fmap', w_preproc, 'input.fmap')
-    w.connect(w_preproc, 'output.func', n_out, 'func')
-    w.connect(w_preproc, 'output.func', w_filtering, 'input.func')
-    w.connect(w_filtering, 'output.func', n_out, 'filtered')
+    w.connect(w_preproc, 'output.func1', n_out, 'func1')
+    w.connect(w_preproc, 'output.func2', n_out, 'func2')
+    w.connect(w_preproc, 'output.func1', w_smooth1, 'input.func')
+    w.connect(w_preproc, 'output.func2', w_smooth2, 'input.func')
+    w.connect(w_smooth1, 'output.func', n_out, 'filtered1')
+    w.connect(w_smooth2, 'output.func', n_out, 'filtered2')
 
     if session.startswith('7T'):
         w_coreg_7T = make_w_coreg_7T()
         w.connect(n_in, 'T1w', w_coreg_7T, 'input.T1w')
-        w.connect(w_preproc, 'output.func', w_coreg_7T, 'input.func')
+        w.connect(w_preproc, 'output.mean', w_coreg_7T, 'input.mean')
         w.connect(w_coreg_7T, 'output.mat_ants', n_out, 'mat_func2struct')
 
     else:
@@ -137,13 +141,14 @@ def make_full_workflow(session='7TGE', n_fmap=10):
 
         w.connect(n_in, 'T1w', w_coreg, 'input.T1w')
         w.connect(n_in, 'subject', w_coreg, 'input.subject')
-        w.connect(w_preproc, 'output.func', w_coreg, 'input.func')
+        w.connect(w_preproc, 'output.mean', w_coreg, 'input.mean')
 
         w.connect(n_in, 'T1w', w_coreg_3T, 'input.T1w')
-        w.connect(w_preproc, 'output.func', w_coreg_3T, 'input.func')
+        w.connect(w_preproc, 'output.mean', w_coreg_3T, 'input.mean')
         w.connect(w_coreg_3T, 'output.mat_func2struct', n_out, 'mat_func2struct')
 
     return w
+
 
 def _n_dynamics(in_file):
     nii = load(in_file)
