@@ -91,6 +91,9 @@ def compute_prf(subject, session, nii_file, n_vols, out_dir, threshold=100):
     results.fill(NaN)
 
     lg.info('starting computation about prf')
+    out_dir = Path(out_dir).resolve()
+    out_dir.mkdir(exist_ok=True, parents=True)
+
     t = time()
     start_time = datetime.now()
 
