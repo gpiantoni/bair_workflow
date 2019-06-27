@@ -7,7 +7,7 @@ from bair_analysis.wouter.preproc_7TGE import make_workflow
 from bair_analysis.workflows.freesurfer2func import make_w_freesurfer2func
 from bair_analysis.workflows.filtering import make_w_smooth
 from bair_analysis.workflows.coreg_7TGE import make_w_coreg_7T, make_w_coreg_7T_7T
-from bair_analysis.wouter.preproc_7T_coreg import make_w_coreg_3T
+from bair_analysis.wouter.preproc_7T_coreg import make_w_coreg_3T_ants
 from nibabel import load
 
 MatlabCommand.set_default_paths('/home/giovanni/tools/spm12')
@@ -137,13 +137,13 @@ def make_full_workflow(session='7TGE', n_fmap=10):
 
     else:
         w_coreg = make_w_freesurfer2func()
-        w_coreg_3T = make_w_coreg_3T()
+        w_coreg_3T = make_w_coreg_3T_ants()
 
         w.connect(n_in, 'T1w', w_coreg, 'input.T1w')
         w.connect(n_in, 'subject', w_coreg, 'input.subject')
         w.connect(w_preproc, 'output.mean', w_coreg, 'input.mean')
 
-        w.connect(n_in, 'T1w', w_coreg_3T, 'input.T1w')
+        w.connect(w_coreg, 'output.brain', w_coreg_3T, 'input.T1w')
         w.connect(w_preproc, 'output.mean', w_coreg_3T, 'input.mean')
         w.connect(w_coreg_3T, 'output.mat_func2struct', n_out, 'mat_func2struct')
 

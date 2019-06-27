@@ -1,7 +1,8 @@
 from nipype.interfaces.fsl import FLIRT, ConvertXFM
 from nipype.interfaces.utility import IdentityInterface
-from nipype.interfaces.freesurfer import Tkregister2, ApplyVolTransform, ReconAll
+from nipype.interfaces.freesurfer import Tkregister2, ApplyVolTransform
 from nipype.pipeline.engine import Workflow, Node
+from nipype.interfaces.io import FreeSurferSource
 
 
 def make_w_freesurfer2func():
@@ -12,15 +13,15 @@ def make_w_freesurfer2func():
         ]), name='input')
 
     n_out = Node(IdentityInterface(fields=[
+        'brain',
         'func2struct',
         'struct2func',
         'freesurfer2func',
         'func2freesurfer',
         ]), name='output')
 
-    reconall = Node(ReconAll(), name='reconall')
-    reconall.inputs.directive = 'all'
-    reconall.inputs.subjects_dir = '/Fridge/R01_BAIR/freesurfer'
+    freesurfer = Node(FreeSurferSource(), name='freesurfer')
+    freesurfer.inputs.subjects_dir = '/Fridge/R01_BAIR/freesurfer'
 
     n_fs2s = Node(Tkregister2(), name='freesurfer2struct')
     n_fs2s.inputs.reg_header = True
@@ -55,12 +56,11 @@ def make_w_freesurfer2func():
     n_fs2f.inputs.out_file = 'mat_freesurfer2func.mat'
 
     w = Workflow('coreg_3T_fs')
-    w.connect(n_in, 'T1w', reconall, 'T1_files')
-    w.connect(n_in, 'subject', reconall, 'subject_id')
-    w.connect(reconall, 'orig', n_fs2s, 'moving_image')
-    w.connect(reconall, 'rawavg', n_fs2s, 'target_image')
-    w.connect(reconall, 'brain', n_vol, 'source_file')
-    w.connect(reconall, 'rawavg', n_vol, 'target_file')
+    w.connect(n_in, 'subject', freesurfer, 'subject_id')
+    w.connect(freesurfer, 'orig', n_fs2s, 'moving_image')
+    w.connect(freesurfer, 'rawavg', n_fs2s, 'target_image')
+    w.connect(freesurfer, 'brain', n_vol, 'source_file')
+    w.connect(freesurfer, 'rawavg', n_vol, 'target_file')
     w.connect(n_in, 'mean', n_f2s, 'in_file')
     w.connect(n_vol, 'transformed_file', n_f2s, 'reference')
     w.connect(n_f2s, 'out_matrix_file', n_s2f, 'in_file')
@@ -72,5 +72,6 @@ def make_w_freesurfer2func():
     w.connect(n_s2f, 'out_file', n_out, 'struct2func')
     w.connect(n_fs2f, 'out_file', n_out, 'freesurfer2func')
     w.connect(n_f2fs, 'out_file', n_out, 'func2freesurfer')
+    w.connect(freesurfer, 'brain', n_out, 'brain')
 
     return w
