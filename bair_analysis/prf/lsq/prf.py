@@ -148,9 +148,10 @@ def compute_prf(subject, session, nii_file1, nii_file2, out_dir, threshold=100):
     lg.info('done')
 
 
-def _export_data(results, nii, out_dir, subject, session, i_good, data, xx, yy,
+def _export_data(results, nii_all, out_dir, subject, session, i_good, data, xx, yy,
                  TR, images_flat):
     lg.info('exporting data')
+    nii = nii_all['1']
     phi, rho = polar2clock(results)
 
     out_nii = Nifti1Image(phi.reshape(nii.shape[:3]), nii.affine)
