@@ -16,13 +16,14 @@ from logging import getLogger, StreamHandler, Formatter, INFO
 
 
 STIM_FILE = '/Fridge/R01_BAIR/visual_fmri/data/bids/stimuli/sub-{}_ses-UMCU{}_task-bairprf_run-0{}.mat'
+# STIM_FILE = '/Fridge/R01_BAIR/iEMU/data/bids/stimuli/sub-{}_ses-UMCU{}_task-bairprf_run-{}_events.mat'
 
 lg = getLogger('prf')
 
 
 def compute_prf(subject, session, nii_file1, nii_file2, out_dir, threshold=100):
 
-    if session == '3TMB':
+    if '3T' in session:
         orig_res = 658
         res = 94
         visual_angle = 6.5175 * 2
