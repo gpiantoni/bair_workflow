@@ -36,7 +36,12 @@ def make_w_full_preproc(SUBJECT):
 
     n_in.inputs.T1w_3TMB = f'/Fridge/R01_BAIR/visual_fmri/data/bids/sub-{SUBJECT}/ses-UMCU3TMB/anat/sub-{SUBJECT}_ses-UMCU3TMB_T1w.nii.gz'
 
-    n_in.inputs.fmap_3TMB = f'/Fridge/R01_BAIR/visual_fmri/data/bids/sub-{SUBJECT}/ses-UMCU3TMB/fmap/sub-{SUBJECT}_ses-UMCU3TMB_acq-GE_dir-R_epi.nii.gz'
+    if SUBJECT == 'visual01':
+        topup_dir = 'L'
+    else:
+        topup_dir = 'R'
+
+    n_in.inputs.fmap_3TMB = f'/Fridge/R01_BAIR/visual_fmri/data/bids/sub-{SUBJECT}/ses-UMCU3TMB/fmap/sub-{SUBJECT}_ses-UMCU3TMB_acq-GE_dir-{topup_dir}_epi.nii.gz'
     n_in.inputs.func_3TMB = [
         f'/Fridge/R01_BAIR/visual_fmri/data/bids/sub-{SUBJECT}/ses-UMCU3TMB/func/sub-{SUBJECT}_ses-UMCU3TMB_task-bairprf_run-01_bold.nii.gz',
         f'/Fridge/R01_BAIR/visual_fmri/data/bids/sub-{SUBJECT}/ses-UMCU3TMB/func/sub-{SUBJECT}_ses-UMCU3TMB_task-bairprf_run-02_bold.nii.gz'
