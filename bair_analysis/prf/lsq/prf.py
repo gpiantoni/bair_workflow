@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from popeye.utilities import double_gamma_hrf
+
 from scipy.signal import convolve
 from scipy.optimize import least_squares
 from numpy import concatenate, ones, c_, zeros, arange, r_, mean, max, meshgrid, pi, abs, std, where, dot, corrcoef, exp, empty
@@ -14,6 +14,7 @@ from scipy.io import loadmat
 from argparse import ArgumentParser
 from logging import getLogger, StreamHandler, Formatter, INFO
 
+from .utils import double_gamma_hrf
 
 STIM_FILE = '/Fridge/R01_BAIR/visual_fmri/data/bids/stimuli/sub-{}_ses-UMCU{}_task-bairprf_run-0{}.mat'
 # STIM_FILE = '/Fridge/R01_BAIR/iEMU/data/bids/stimuli/sub-{}_ses-UMCU{}_task-bairprf_run-{}_events.mat'

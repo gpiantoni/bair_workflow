@@ -90,7 +90,7 @@ def make_w_full_preproc(SUBJECT):
     w.connect(n_in, 'T1w_7TSE', n_sink, '7TSE.@t1w')
 
     for t in TECHNIQUES:
-        w.connect(w_pr[t], 'output.mat_func2struct', n_sink, t + '.@mat_func2struct')
+        # w.connect(w_pr[t], 'output.mat_func2struct', n_sink, t + '.@mat_func2struct')
         for s in ('1', '2'):
             for f in ('func', 'filtered'):
                 w.connect(w_pr[t], f'output.{f}{s}', n_sink, f'{t}.@{f}{s}')
@@ -135,10 +135,14 @@ def make_full_workflow(session='7TGE', n_fmap=10):
     w.connect(w_smooth2, 'output.func', n_out, 'filtered2')
 
     if session.startswith('7T'):
+        pass
+
+        """
         w_coreg_7T = make_w_coreg_7T()
         w.connect(n_in, 'T1w', w_coreg_7T, 'input.T1w')
         w.connect(w_preproc, 'output.mean', w_coreg_7T, 'input.mean')
         w.connect(w_coreg_7T, 'output.mat_ants', n_out, 'mat_func2struct')
+        """
 
     else:
         w_coreg = make_w_freesurfer2func()
