@@ -165,22 +165,22 @@ def make_w_coreg_7T():
     n_coreg.inputs.restrict_deformation = [[], ]
     n_coreg.inputs.output_warped_image = True
     n_coreg.inputs.output_inverse_warped_image = True
-    n_coreg.inputs.output_transform_prefix = 'ants_func_to_struct'
+    n_coreg.inputs.output_transform_prefix = 'ants_struct_to_func'
 
     n_s2f = Node(ApplyTransforms(), name='ants_struct2func')
     n_s2f.inputs.dimension = 3
-    n_s2f.inputs.invert_transform_flags = True
     n_s2f.inputs.interpolation = 'NearestNeighbor'
 
     n_f2s = Node(ApplyTransforms(), name='ants_func2struct')
     n_f2s.inputs.dimension = 3
     n_f2s.inputs.interpolation = 'NearestNeighbor'
-    n_f2s.inputs.default_value = 0
+    n_f2s.inputs.invert_transform_flags = True
 
-    w.connect(n_in, 'T1w', n_coreg, 'fixed_image')
-    w.connect(n_in, 'mean', n_coreg, 'moving_image')
+    w.connect(n_in, 'mean', n_coreg, 'fixed_image')
+    w.connect(n_in, 'T1w', n_coreg, 'moving_image')
     w.connect(n_coreg, 'forward_transforms', n_out, 'mat_ants')
 
+    """
     w.connect(n_coreg, 'forward_transforms', n_s2f, 'transforms')
     w.connect(n_in, 'T1w', n_s2f, 'input_image')
     w.connect(n_in, 'mean', n_s2f, 'reference_image')
@@ -188,5 +188,6 @@ def make_w_coreg_7T():
     w.connect(n_coreg, 'forward_transforms', n_f2s, 'transforms')
     w.connect(n_in, 'mean', n_f2s, 'input_image')
     w.connect(n_in, 'T1w', n_f2s, 'reference_image')
+    """
 
     return w
