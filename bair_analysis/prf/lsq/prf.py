@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import warnings
 from scipy.signal import convolve
 from scipy.optimize import least_squares
 from numpy import concatenate, ones, c_, zeros, arange, r_, mean, max, meshgrid, pi, abs, std, where, dot, corrcoef, exp, empty
@@ -74,8 +75,9 @@ def compute_prf(subject, session, nii_file1, nii_file2, out_dir, threshold=100):
     lg.info('cleaning up data')
     data = concatenate((nii['1'].get_data(), nii['2'].get_data()), axis=3)
     data = data.reshape(-1, sum(n_vols))
-    mask = mean(data, axis=1) > 100
+    mask = mean(data, axis=1) > threshold
     i_good = where(mask)[0]
+    lg.info(f'Computing PRF on {len(i_good)} out of {sum(n_vols)} voxels')
 
     r_ones = ones(sum(n_vols))
     r_runs = center(r_[zeros(n_vols[0]), ones(n_vols[1])])
@@ -84,12 +86,14 @@ def compute_prf(subject, session, nii_file1, nii_file2, out_dir, threshold=100):
 
     regressors = c_[r_ones, r_runs, r_lin, r_quad]
 
-    beta, residuals, rank, singular_values = lstsq(regressors, data.T)
+    beta, residuals, rank, singular_values = lstsq(regressors, data.T, rcond=None)
 
     X = dot(regressors, beta)
     data -= X.T
 
-    data /= std(data, axis=1)[:, None]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        data /= std(data, axis=1)[:, None]
 
     delta_x = arange(res) - (res - 1) / 2
     delta_x = delta_x / res * visual_angle
@@ -201,7 +205,10 @@ def predict(params, xx, yy, TR, images_flat):
 
 
 def n(x):
-    return (x - mean(x)) / std(x)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        out = (x - mean(x)) / std(x)
+    return out
 
 
 def center(x):

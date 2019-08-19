@@ -6,7 +6,7 @@ from nipype.interfaces.io import DataSink
 from bair_analysis.wouter.preproc_7TGE import make_workflow
 from bair_analysis.workflows.freesurfer2func import make_w_freesurfer2func
 from bair_analysis.workflows.filtering import make_w_smooth
-from bair_analysis.workflows.coreg_7TGE import make_w_coreg_7T, make_w_coreg_7T_7T
+from bair_analysis.workflows.coreg_7TGE import make_w_coreg_7T
 from bair_analysis.wouter.preproc_7T_coreg import make_w_coreg_3T_ants
 from nibabel import load
 
@@ -66,16 +66,12 @@ def make_w_full_preproc(SUBJECT):
         '7TSE': make_full_workflow('7TSE', _n_dynamics(n_in.inputs.fmap_7TSE)),
         '3TMB': make_full_workflow('3TMB', _n_dynamics(n_in.inputs.fmap_3TMB)),
         }
-    w_coreg_7T_7T = make_w_coreg_7T_7T()
 
     for t in TECHNIQUES:
         w.connect(n_in, 'T1w_' + t, w_pr[t], 'input.T1w')
         w.connect(n_in, 'func_' + t, w_pr[t], 'input.func')
         w.connect(n_in, 'fmap_' + t, w_pr[t], 'input.fmap')
     w.connect(n_in, 'subject', w_pr['3TMB'], 'input.subject')
-
-    w.connect(n_in, 'T1w_7TGE', w_coreg_7T_7T, 'input.T1w_GE')
-    w.connect(n_in, 'T1w_7TSE', w_coreg_7T_7T, 'input.T1w_SE')
 
     n_sink = Node(DataSink(), 'sink')
     n_sink.inputs.base_directory = '/Fridge/users/giovanni/projects/margriet/analysis/output'
@@ -90,7 +86,7 @@ def make_w_full_preproc(SUBJECT):
     w.connect(n_in, 'T1w_7TSE', n_sink, '7TSE.@t1w')
 
     for t in TECHNIQUES:
-        # w.connect(w_pr[t], 'output.mat_func2struct', n_sink, t + '.@mat_func2struct')
+        w.connect(w_pr[t], 'output.mat_func2struct', n_sink, t + '.@mat_func2struct')
         for s in ('1', '2'):
             for f in ('func', 'filtered'):
                 w.connect(w_pr[t], f'output.{f}{s}', n_sink, f'{t}.@{f}{s}')
@@ -135,14 +131,10 @@ def make_full_workflow(session='7TGE', n_fmap=10):
     w.connect(w_smooth2, 'output.func', n_out, 'filtered2')
 
     if session.startswith('7T'):
-        pass
-
-        """
         w_coreg_7T = make_w_coreg_7T()
         w.connect(n_in, 'T1w', w_coreg_7T, 'input.T1w')
         w.connect(w_preproc, 'output.mean', w_coreg_7T, 'input.mean')
         w.connect(w_coreg_7T, 'output.mat_ants', n_out, 'mat_func2struct')
-        """
 
     else:
         w_coreg = make_w_freesurfer2func()

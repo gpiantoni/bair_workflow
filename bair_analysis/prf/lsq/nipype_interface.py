@@ -64,7 +64,7 @@ class PRF(BaseInterface):
 
         out_dir = realpath('./prf')
 
-        outputs = []
+        outputs = {}
         conditions = ['phi', 'rho', 'hrf', 'sigma', 'r2']
         for c in conditions:
             outputs[c + '_file'] = join(out_dir, f'{self.inputs.subject}_{self.inputs.session}_{c}.nii.gz')
