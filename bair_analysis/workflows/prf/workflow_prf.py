@@ -27,7 +27,7 @@ def make_workflow():
         ]), name='output')
 
     n_prf = Node(PRF(), 'prf')
-    n_prf.inputs.threshold = 1000
+    n_prf.inputs.threshold = 10
 
     n_mean = Node(interface=TStat(), name='mean')
     n_mean.inputs.args = '-mean'
@@ -67,6 +67,8 @@ def make_workflow():
 
 def make_workflow_roi(region):
     """
+    Benson_ROI_Names = {'V1', 'V2', 'V3', 'hV4', 'VO1', 'VO2', 'LO1', 'LO2', 'TO1', 'TO2', 'V3B', 'V3A'};
+
     Wang_ROI_Names = [
         'V1v', 'V1d', 'V2v', 'V2d', 'V3v', 'V3d', 'hV4', 'VO1', 'VO2', 'PHC1', 'PHC2',
         'TO2', 'TO1', 'LO2', 'LO1', 'V3B', 'V3A', 'IPS0', 'IPS1', 'IPS2', 'IPS3', 'IPS4' ,
