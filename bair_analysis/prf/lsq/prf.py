@@ -77,7 +77,7 @@ def compute_prf(subject, session, nii_file1, nii_file2, out_dir, threshold=100):
     data = data.reshape(-1, sum(n_vols))
     mask = mean(data, axis=1) > threshold
     i_good = where(mask)[0]
-    lg.info(f'Computing PRF on {len(i_good)} out of {sum(n_vols)} voxels')
+    lg.info(f'Computing PRF on {len(i_good)} out of {data.shape[0]} voxels')
 
     r_ones = ones(sum(n_vols))
     r_runs = center(r_[zeros(n_vols[0]), ones(n_vols[1])])
@@ -132,7 +132,9 @@ def compute_prf(subject, session, nii_file1, nii_file2, out_dir, threshold=100):
             return x_vox - n(out_hrf)
 
         try:
-            result = least_squares(minimize, [0, 0, 5, 0], method='lm')
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                result = least_squares(minimize, [0, 0, 5, 0], method='lm')
             results[i, :] = result.x
 
             if i_x % 1000 == 0:

@@ -1,2 +1,2 @@
 from .prf import compute_prf
-from .nipype_interface import PRF
+from .nipype_interface import PRF, PRF2CSV
