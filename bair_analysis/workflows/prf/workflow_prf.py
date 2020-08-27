@@ -9,8 +9,8 @@ from ...prf.lsq import PRF, PRF2CSV
 REGIONS = ['V1', 'V2', 'V3']
 
 
-def make_workflow():
-    w = Workflow(f'prf_to_csv')
+def make_workflow(name=''):
+    w = Workflow(f'prf_to_csv_' + name)
 
     n_in = Node(IdentityInterface(fields=[
         'atlas',
