@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='bair_analysis',
+    name='bairanalysis',
     description='Tools to analyze data structured as BIDS in Python',
     author="Gio Piantoni",
     license='MIT',
