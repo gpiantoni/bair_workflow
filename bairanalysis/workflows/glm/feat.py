@@ -17,6 +17,10 @@ from nipype.interfaces.utility import IdentityInterface
 
 def mk_workflow_glm_feat():
     """Workflow to compute GLM in FSL
+
+    TODO
+    ----
+    read events and create contrasts
     """
     input_node = Node(IdentityInterface(fields=[
         'bold',
@@ -33,7 +37,6 @@ def mk_workflow_glm_feat():
     model.inputs.input_units = 'secs'
     model.inputs.high_pass_filter_cutoff = 128.
     model.inputs.parameter_source = 'FSL'
-    # model.inputs.subject_info = [Bunch(conditions=['gestures'], onsets=[onsets, ], durations=[durations, ])]
 
     design = Node(interface=Level1Design(), name='design')
     design.inputs.bases = {'dgamma': {'derivs': True}}
